@@ -49,4 +49,29 @@ router.post('/reports', verificarToken, async (req: Request, res: Response) => {
     }
 });
 
+// GET todos los reportes con filtros opcionales
+router.get('/reports', verificarToken, async (req: Request, res: Response) => {
+    try {
+        const response = await axios.get(
+            `${process.env.REPORT_SERVICE_URL}/reports`,
+            { params: req.query }
+        );
+        res.status(response.status).json(response.data);
+    } catch (error: any) {
+        res.status(error.response?.status || 500).json(error.response?.data);
+    }
+});
+
+// GET reporte por ID
+router.get('/reports/:id', verificarToken, async (req: Request, res: Response) => {
+    try {
+        const response = await axios.get(
+            `${process.env.REPORT_SERVICE_URL}/reports/${req.params['id']}`
+        );
+        res.status(response.status).json(response.data);
+    } catch (error: any) {
+        res.status(error.response?.status || 500).json(error.response?.data);
+    }
+});
+
 export default router;
