@@ -74,4 +74,42 @@ router.get('/reports/:id', verificarToken, async (req: Request, res: Response) =
     }
 });
 
+// Cambiar estado de reporte
+router.put('/reports/:id/estado', verificarToken, async (req: Request, res: Response) => {
+    try {
+        const response = await axios.put(
+            `${process.env.REPORT_SERVICE_URL}/reports/${req.params['id']}/estado`,
+            req.body,
+            {
+                headers: {
+                    usuario_id: req.usuario!.user_id,
+                    rol_id: req.usuario!.rol_id,
+                },
+            }
+        );
+        res.status(response.status).json(response.data);
+    } catch (error: any) {
+        res.status(error.response?.status || 500).json(error.response?.data);
+    }
+});
+
+// Editar reporte
+router.put('/reports/:id', verificarToken, async (req: Request, res: Response) => {
+    try {
+        const response = await axios.put(
+            `${process.env.REPORT_SERVICE_URL}/reports/${req.params['id']}`,
+            req.body,
+            {
+                headers: {
+                    usuario_id: req.usuario!.user_id,
+                    rol_id: req.usuario!.rol_id,
+                },
+            }
+        );
+        res.status(response.status).json(response.data);
+    } catch (error: any) {
+        res.status(error.response?.status || 500).json(error.response?.data);
+    }
+});
+
 export default router;
