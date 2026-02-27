@@ -5,6 +5,7 @@ import { login } from '../controllers/LoginController';
 import { register } from '../controllers/RegisterController';
 import { updateUser } from '../controllers/UpdateUserController';
 import { deleteUser } from '../controllers/DeleteUserController';
+import { suspendUser } from '../controllers/SuspendUserController';
 
 const router = express.Router();
 
@@ -12,6 +13,7 @@ router.post('/auth/register', register);
 router.post('/auth/login', login);
 router.put('/auth/user/:id', updateUser);
 router.delete('/auth/user/:id', deleteUser);
+router.post('/auth/user/:id/suspend', suspendUser);
 
 // Ruta que inicia el flujo de Google
 router.get(
