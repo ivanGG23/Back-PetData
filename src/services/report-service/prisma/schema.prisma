@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model ESTADO_ANIMAL {
+  id          Int       @id @default(autoincrement())
+  nombre      String
+  descripcion String
+  reportes    REPORTS[]
+}
+
+model ESTADO_REPORTE {
+  id          Int       @id @default(autoincrement())
+  nombre      String
+  descripcion String
+  reportes    REPORTS[]
+}
+
+model PRIORIDAD {
+  id       Int       @id @default(autoincrement())
+  nombre   String
+  nivel    Int
+  reportes REPORTS[]
+}
+
+model REPORTS {
+  id                   Int            @id @default(autoincrement())
+  usuario_creador_id   Int
+  rescatista_id        Int?
+  estado_animal_id     Int
+  estado_reporte_actual Int
+  prioridad_id         Int
+  locacion_id          Int?
+  descripcion          String
+  fecha_creacion       DateTime       @default(now())
+  fecha_asig           DateTime?
+  fecha_cierre         DateTime?
+  contacto_opcional    String?
+
+  estado_animal  ESTADO_ANIMAL  @relation(fields: [estado_animal_id], references: [id])
+  estado_reporte ESTADO_REPORTE @relation(fields: [estado_reporte_actual], references: [id])
+  prioridad      PRIORIDAD      @relation(fields: [prioridad_id], references: [id])
+}
+
+model ROL {
+  id          Int    @id
+  nombre      String
+  descripcion String
+
+  @@ignore
+}
+
+model USER {
+  user_id                  Int       @id
+  rol_id                   Int
+  nombre                   String
+  apellido                 String
+  fecha_nacimiento         DateTime?
+  correo                   String    @unique
+  telefono                 String?
+  contrasena_hash          String?
+  avatar_url               String?
+  google_id                String?   @unique
+  auth_provider            String
+  estado_cuenta            String
+  correo_verificado        Boolean
+  fecha_creacion           DateTime
+  fecha_ultima_restriccion DateTime?
+
+  @@ignore
+}
