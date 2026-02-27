@@ -17,3 +17,72 @@ model Locacion {
 
   @@map("LOCACION")
 }
+
+model ROL {
+  id          Int    @id
+  nombre      String
+  descripcion String
+
+  @@ignore
+}
+
+model USER {
+  user_id                  Int       @id
+  rol_id                   Int
+  nombre                   String
+  apellido                 String
+  fecha_nacimiento         DateTime?
+  correo                   String    @unique
+  telefono                 String?
+  contrasena_hash          String?
+  avatar_url               String?
+  google_id                String?   @unique
+  auth_provider            String
+  estado_cuenta            String
+  correo_verificado        Boolean
+  fecha_creacion           DateTime
+  fecha_ultima_restriccion DateTime?
+
+  @@ignore
+}
+
+model REPORTS {
+  id                    Int       @id
+  usuario_creador_id    Int
+  rescatista_id         Int?
+  estado_animal_id      Int
+  estado_reporte_actual Int
+  prioridad_id          Int
+  locacion_id           Int?
+  descripcion           String
+  fecha_creacion        DateTime
+  fecha_asig            DateTime?
+  fecha_cierre          DateTime?
+  contacto_opcional     String?
+
+  @@ignore
+}
+
+model ESTADO_ANIMAL {
+  id          Int    @id
+  nombre      String
+  descripcion String
+
+  @@ignore
+}
+
+model ESTADO_REPORTE {
+  id          Int    @id
+  nombre      String
+  descripcion String
+
+  @@ignore
+}
+
+model PRIORIDAD {
+  id     Int    @id
+  nombre String
+  nivel  Int
+
+  @@ignore
+}
