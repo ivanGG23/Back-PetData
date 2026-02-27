@@ -112,4 +112,29 @@ router.put('/reports/:id', verificarToken, async (req: Request, res: Response) =
     }
 });
 
+// Registrar movimiento de reputación
+router.post('/reputation', verificarToken, async (req: Request, res: Response) => {
+    try {
+        const response = await axios.post(
+            `${process.env.REPUTATION_SERVICE_URL}/reputation`,
+            req.body
+        );
+        res.status(response.status).json(response.data);
+    } catch (error: any) {
+        res.status(error.response?.status || 500).json(error.response?.data);
+    }
+});
+
+// Obtener reputación de un usuario
+router.get('/reputation/:usuario_id', verificarToken, async (req: Request, res: Response) => {
+    try {
+        const response = await axios.get(
+            `${process.env.REPUTATION_SERVICE_URL}/reputation/${req.params['usuario_id']}`
+        );
+        res.status(response.status).json(response.data);
+    } catch (error: any) {
+        res.status(error.response?.status || 500).json(error.response?.data);
+    }
+});
+
 export default router;
