@@ -38,7 +38,7 @@ passport.use(
                     // Si no existe, crea el usuario nuevo
                     user = await prisma.uSER.create({
                         data: {
-                            rol_id: 1, // ciudadano por defecto
+                            rol_id: 1,
                             nombre,
                             apellido,
                             correo,
@@ -46,7 +46,7 @@ passport.use(
                             avatar_url,
                             auth_provider: 'google',
                             estado_cuenta: 'activo',
-                            correo_verificado: true, // Google ya lo verificó
+                            correo_verificado: true,
                         },
                     });
                 }
