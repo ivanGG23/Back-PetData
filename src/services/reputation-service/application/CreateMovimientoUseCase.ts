@@ -50,6 +50,9 @@ export class CreateMovimientoUseCase {
             },
         });
 
+        console.log(`Verificando suspensión para usuario ${usuario_id}`);
+        console.log(`Infracciones encontradas: ${infracciones}`);
+
         console.log(`Usuario ${usuario_id} tiene ${infracciones} infracciones en los últimos 30 días`);
 
         // Si llega al límite, suspender la cuenta
