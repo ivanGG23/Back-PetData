@@ -4,8 +4,12 @@ import { CreateMovimientoRequest } from '../domain/dto/CreateMovimientoRequest';
 
 const prisma = new PrismaClient();
 
+const LIMITE_INFRACCIONES = 3;
+const DIAS_VENTANA = 30;
+
 export class CreateMovimientoUseCase {
     async execute(data: CreateMovimientoRequest) {
+
         // Registrar el movimiento
         const movimiento = await prisma.rEPUTACION_MOVIMIENTO.create({
             data: {
@@ -16,29 +20,48 @@ export class CreateMovimientoUseCase {
             },
         });
 
-        // Calcular el total de puntos del usuario
+        // Solo verificar suspensión si el movimiento es negativo
+        if (data.puntos < 0) {
+            await this.verificarSuspension(data.usuario_id);
+        }
+
+        // Calcular total histórico para devolver en la respuesta
         const total = await prisma.rEPUTACION_MOVIMIENTO.aggregate({
             where: { usuario_id: data.usuario_id },
             _sum: { puntos: true },
         });
 
-        const totalPuntos = total._sum.puntos ?? 0;
-
-        // Si el total baja de -10 notificar al auth-service para suspender la cuenta
-        if (totalPuntos <= -10) {
-            try {
-                await axios.put(
-                    `${process.env.AUTH_SERVICE_URL}/auth/user/${data.usuario_id}/suspender`,
-                    { motivo: 'Puntaje de reputación bajo' }
-                );
-            } catch (error) {
-                console.error('Error al notificar al auth-service:', error);
-            }
-        }
-
         return {
             movimiento,
-            total_puntos: totalPuntos,
+            total_puntos: total._sum.puntos ?? 0,
         };
+    }
+
+    private async verificarSuspension(usuario_id: number) {
+        // Contar infracciones (movimientos negativos) en los últimos 30 días
+        const hace30Dias = new Date();
+        hace30Dias.setDate(hace30Dias.getDate() - DIAS_VENTANA);
+
+        const infracciones = await prisma.rEPUTACION_MOVIMIENTO.count({
+            where: {
+                usuario_id,
+                puntos: { lt: 0 },
+                fecha: { gte: hace30Dias },
+            },
+        });
+
+        console.log(`Usuario ${usuario_id} tiene ${infracciones} infracciones en los últimos 30 días`);
+
+        // Si llega al límite, suspender la cuenta
+        if (infracciones >= LIMITE_INFRACCIONES) {
+            try {
+                await axios.put(
+                    `${process.env.AUTH_SERVICE_URL}/auth/user/${usuario_id}/suspender`
+                );
+                console.log(`Usuario ${usuario_id} suspendido por ${infracciones} infracciones en 30 días`);
+            } catch (error) {
+                console.error('Error al suspender usuario:', error);
+            }
+        }
     }
 }
