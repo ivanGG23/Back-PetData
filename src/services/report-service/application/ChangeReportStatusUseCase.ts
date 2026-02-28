@@ -35,6 +35,10 @@ export class ChangeReportStatusUseCase {
         const estado_actual = reporte.estado_reporte_actual;
         const nuevo_estado = data.nuevo_estado_id;
 
+        // No se puede cambiar el estado si el reporte ya está cerrado
+        if (estado_actual === 4 || estado_actual === 5) {
+            throw new Error('No se puede modificar un reporte que ya está cerrado');
+        }
         if (nuevo_estado === ESTADO_FALSO) {
             if (!data.comentario || data.comentario.trim() === '') {
                 throw new Error('Se requiere una justificación para marcar el reporte como falso');
