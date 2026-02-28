@@ -1,16 +1,17 @@
 import { PrismaClient } from '@prisma/client';
+import axios from 'axios';
 import { ChangeStatusRequest } from '../domain/dto/ChangeStatusRequest';
 
 const prisma = new PrismaClient();
 
-// Transiciones permitidas por rol
 const TRANSICIONES_RESCATISTA: Record<number, number[]> = {
-    1: [2],       // Pendiente → En revisión
-    2: [3],       // En revisión → En proceso
-    3: [4],       // En proceso → Resuelto
+    1: [2],
+    2: [3],
+    3: [4],
 };
 
 const ESTADO_FALSO = 5;
+const ESTADO_RESUELTO = 4;
 
 export class ChangeReportStatusUseCase {
     async execute(
@@ -27,39 +28,43 @@ export class ChangeReportStatusUseCase {
             throw new Error('Reporte no encontrado');
         }
 
-        const estado_actual = reporte.estado_reporte_actual;
-        const nuevo_estado = data.nuevo_estado_id;
-
-        // Solo rescatistas pueden cambiar estado (rol_id 2)
         if (rol_id !== 2) {
             throw new Error('Solo los rescatistas pueden cambiar el estado de un reporte');
         }
 
-        // Validar si quiere marcar como falso
+        const estado_actual = reporte.estado_reporte_actual;
+        const nuevo_estado = data.nuevo_estado_id;
+
         if (nuevo_estado === ESTADO_FALSO) {
             if (!data.comentario || data.comentario.trim() === '') {
                 throw new Error('Se requiere una justificación para marcar el reporte como falso');
             }
         } else {
-            // Validar transición permitida
             const transicionesPermitidas = TRANSICIONES_RESCATISTA[estado_actual] || [];
             if (!transicionesPermitidas.includes(nuevo_estado)) {
-                throw new Error(
-                    `No se puede cambiar de estado ${estado_actual} a estado ${nuevo_estado}`
-                );
+                throw new Error(`No se puede cambiar de estado ${estado_actual} a estado ${nuevo_estado}`);
             }
         }
 
-        // Actualizar el estado
         const reporteActualizado = await prisma.rEPORTS.update({
             where: { id: report_id },
             data: {
                 estado_reporte_actual: nuevo_estado,
                 rescatista_id: usuario_id,
                 fecha_asig: estado_actual === 1 ? new Date() : reporte.fecha_asig,
-                fecha_cierre: nuevo_estado === 4 || nuevo_estado === 5 ? new Date() : null,
+                fecha_cierre: nuevo_estado === ESTADO_RESUELTO || nuevo_estado === ESTADO_FALSO
+                    ? new Date()
+                    : null,
             },
         });
+
+        // Disparar movimientos de reputación automáticamente
+        await this.registrarReputacion(
+            nuevo_estado,
+            reporte.usuario_creador_id,
+            usuario_id,
+            report_id
+        );
 
         return {
             message: 'Estado actualizado correctamente',
@@ -68,5 +73,52 @@ export class ChangeReportStatusUseCase {
             estado_nuevo: nuevo_estado,
             comentario: data.comentario ?? null,
         };
+    }
+
+    private async registrarReputacion(
+        nuevo_estado: number,
+        ciudadano_id: number,
+        rescatista_id: number,
+        reporte_id: number
+    ) {
+        try {
+            if (nuevo_estado === ESTADO_FALSO) {
+                // Restar puntos al ciudadano que hizo el reporte falso
+                await axios.post(
+                    `${process.env.REPUTATION_SERVICE_URL}/reputation`,
+                    {
+                        usuario_id: ciudadano_id,
+                        reporte_id,
+                        puntos: -5,
+                        motivo: 'Reporte marcado como falso por rescatista',
+                    }
+                );
+            } else if (nuevo_estado === ESTADO_RESUELTO) {
+                // Sumar puntos al ciudadano por reporte verídico
+                await axios.post(
+                    `${process.env.REPUTATION_SERVICE_URL}/reputation`,
+                    {
+                        usuario_id: ciudadano_id,
+                        reporte_id,
+                        puntos: 10,
+                        motivo: 'Reporte confirmado como real y resuelto',
+                    }
+                );
+
+                // Sumar puntos al rescatista por resolver el caso
+                await axios.post(
+                    `${process.env.REPUTATION_SERVICE_URL}/reputation`,
+                    {
+                        usuario_id: rescatista_id,
+                        reporte_id,
+                        puntos: 15,
+                        motivo: 'Caso resuelto exitosamente',
+                    }
+                );
+            }
+        } catch (error) {
+            console.error('Error al registrar reputación:', error);
+            // No interrumpimos el flujo si falla el reputation-service
+        }
     }
 }
