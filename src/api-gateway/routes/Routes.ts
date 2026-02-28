@@ -112,7 +112,8 @@ router.put('/reports/:id', verificarToken, async (req: Request, res: Response) =
     }
 });
 
-// Registrar movimiento de reputación
+// Registrar movimiento de reputación | (deshabilitado por ahora, se hará internamente en el servicio de reportes)
+/*
 router.post('/reputation', verificarToken, async (req: Request, res: Response) => {
     try {
         const response = await axios.post(
@@ -124,6 +125,7 @@ router.post('/reputation', verificarToken, async (req: Request, res: Response) =
         res.status(error.response?.status || 500).json(error.response?.data);
     }
 });
+*/
 
 // Obtener reputación de un usuario
 router.get('/reputation/:usuario_id', verificarToken, async (req: Request, res: Response) => {
