@@ -139,4 +139,52 @@ router.get('/reputation/:usuario_id', verificarToken, async (req: Request, res: 
     }
 });
 
+// Historial de estados
+router.post('/tracking/historial', verificarToken, async (req: Request, res: Response) => {
+    try {
+        const response = await axios.post(
+            `${process.env.TRACKING_SERVICE_URL}/tracking/historial`,
+            req.body
+        );
+        res.status(response.status).json(response.data);
+    } catch (error: any) {
+        res.status(error.response?.status || 500).json(error.response?.data);
+    }
+});
+
+router.get('/tracking/historial/:reporte_id', verificarToken, async (req: Request, res: Response) => {
+    try {
+        const response = await axios.get(
+            `${process.env.TRACKING_SERVICE_URL}/tracking/historial/${req.params['reporte_id']}`
+        );
+        res.status(response.status).json(response.data);
+    } catch (error: any) {
+        res.status(error.response?.status || 500).json(error.response?.data);
+    }
+});
+
+// Evidencia
+router.post('/tracking/evidencia', verificarToken, async (req: Request, res: Response) => {
+    try {
+        const response = await axios.post(
+            `${process.env.TRACKING_SERVICE_URL}/tracking/evidencia`,
+            req.body
+        );
+        res.status(response.status).json(response.data);
+    } catch (error: any) {
+        res.status(error.response?.status || 500).json(error.response?.data);
+    }
+});
+
+router.get('/tracking/evidencia/:reporte_id', verificarToken, async (req: Request, res: Response) => {
+    try {
+        const response = await axios.get(
+            `${process.env.TRACKING_SERVICE_URL}/tracking/evidencia/${req.params['reporte_id']}`
+        );
+        res.status(response.status).json(response.data);
+    } catch (error: any) {
+        res.status(error.response?.status || 500).json(error.response?.data);
+    }
+});
+
 export default router;
