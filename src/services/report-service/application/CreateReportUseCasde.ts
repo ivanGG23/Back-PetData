@@ -21,6 +21,11 @@ export class CreateReportUseCase {
         if (reportesHoy >= 3) {
             throw new Error('Has alcanzado el límite de 3 reportes por día');
         }
+        
+        // Validar que venga al menos una imagen
+        if (!data.url_imgs || data.url_imgs.length === 0) {
+            throw new Error('Se requiere al menos una imagen para crear el reporte');
+        }
 
         // Validar que existan estado_animal y prioridad
         const estadoAnimal = await prisma.eSTADO_ANIMAL.findUnique({
@@ -73,6 +78,25 @@ export class CreateReportUseCase {
             // Si el location-service falla, eliminamos el reporte para mantener consistencia
             await prisma.rEPORTS.delete({ where: { id: reporte.id } });
             throw new Error('Error al guardar la ubicación, intenta de nuevo');
+        }
+
+        // Registrar evidencias iniciales automáticamente
+        try {
+            await Promise.all(
+                data.url_imgs.map((url_img) =>
+                    axios.post(
+                        `${process.env.TRACKING_SERVICE_URL}/tracking/evidencia`,
+                        {
+                            reporte_id: reporte.id,
+                            subido_por: data.usuario_creador_id,
+                            url_img,
+                            tipo: 'inicial',
+                        }
+                    )
+                )
+            );
+        } catch (error) {
+            console.error('Error al registrar evidencias iniciales:', error);
         }
 
         return {

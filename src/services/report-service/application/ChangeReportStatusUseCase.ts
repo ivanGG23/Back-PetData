@@ -35,10 +35,17 @@ export class ChangeReportStatusUseCase {
         const estado_actual = reporte.estado_reporte_actual;
         const nuevo_estado = data.nuevo_estado_id;
 
-        // No se puede cambiar el estado si el reporte ya está cerrado
         if (estado_actual === 4 || estado_actual === 5) {
             throw new Error('No se puede modificar un reporte que ya está cerrado');
         }
+
+        // Validar que venga al menos una imagen si el estado es Resuelto
+        if (nuevo_estado === ESTADO_RESUELTO) {
+            if (!data.url_imgs || data.url_imgs.length === 0) {
+                throw new Error('Se requiere al menos una imagen de cierre para marcar el reporte como resuelto');
+            }
+        }
+
         if (nuevo_estado === ESTADO_FALSO) {
             if (!data.comentario || data.comentario.trim() === '') {
                 throw new Error('Se requiere una justificación para marcar el reporte como falso');
@@ -62,13 +69,11 @@ export class ChangeReportStatusUseCase {
             },
         });
 
-        // Disparar movimientos de reputación automáticamente
-        await this.registrarReputacion(
-            nuevo_estado,
-            reporte.usuario_creador_id,
-            usuario_id,
-            report_id
-        );
+        // Registrar historial automáticamente
+        await this.registrarHistorial(report_id, nuevo_estado, usuario_id, data.comentario, data.url_imgs);
+
+        // Registrar reputación automáticamente
+        await this.registrarReputacion(nuevo_estado, reporte.usuario_creador_id, usuario_id, report_id);
 
         return {
             message: 'Estado actualizado correctamente',
@@ -79,6 +84,45 @@ export class ChangeReportStatusUseCase {
         };
     }
 
+    private async registrarHistorial(
+        reporte_id: number,
+        estado_reporte_id: number,
+        usuario_id: number,
+        comentario?: string,
+        url_imgs?: string[]
+    ) {
+        try {
+            await axios.post(
+                `${process.env.TRACKING_SERVICE_URL}/tracking/historial`,
+                {
+                    reporte_id,
+                    estado_reporte_id,
+                    usuario_id,
+                    comentario: comentario ?? undefined,
+                }
+            );
+
+            // Si vienen imágenes de cierre las registramos todas
+            if (url_imgs && url_imgs.length > 0 && estado_reporte_id === ESTADO_RESUELTO) {
+                await Promise.all(
+                    url_imgs.map((url_img) =>
+                        axios.post(
+                            `${process.env.TRACKING_SERVICE_URL}/tracking/evidencia`,
+                            {
+                                reporte_id,
+                                subido_por: usuario_id,
+                                url_img,
+                                tipo: 'cierre',
+                            }
+                        )
+                    )
+                );
+            }
+        } catch (error) {
+            console.error('Error al registrar historial o evidencia:', error);
+        }
+    }
+
     private async registrarReputacion(
         nuevo_estado: number,
         ciudadano_id: number,
@@ -87,7 +131,6 @@ export class ChangeReportStatusUseCase {
     ) {
         try {
             if (nuevo_estado === ESTADO_FALSO) {
-                // Restar puntos al ciudadano que hizo el reporte falso
                 await axios.post(
                     `${process.env.REPUTATION_SERVICE_URL}/reputation`,
                     {
@@ -98,7 +141,6 @@ export class ChangeReportStatusUseCase {
                     }
                 );
             } else if (nuevo_estado === ESTADO_RESUELTO) {
-                // Sumar puntos al ciudadano por reporte verídico
                 await axios.post(
                     `${process.env.REPUTATION_SERVICE_URL}/reputation`,
                     {
@@ -109,7 +151,6 @@ export class ChangeReportStatusUseCase {
                     }
                 );
 
-                // Sumar puntos al rescatista por resolver el caso
                 await axios.post(
                     `${process.env.REPUTATION_SERVICE_URL}/reputation`,
                     {
@@ -122,7 +163,6 @@ export class ChangeReportStatusUseCase {
             }
         } catch (error) {
             console.error('Error al registrar reputación:', error);
-            // No interrumpimos el flujo si falla el reputation-service
         }
     }
 }

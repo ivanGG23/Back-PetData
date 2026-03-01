@@ -7,4 +7,5 @@ export interface CreateReportRequest {
     latitud: number;
     longitud: number;
     precision_metros?: number;
+    url_imgs: string[];
 }
