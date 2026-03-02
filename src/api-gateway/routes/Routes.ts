@@ -205,4 +205,41 @@ router.post('/reports/evidencia', verificarToken, async (req: Request, res: Resp
     }
 });
 
+// Asignar rescatista
+router.post('/reports/:id/asignar', verificarToken, async (req: Request, res: Response) => {
+    try {
+        const response = await axios.post(
+            `${process.env.REPORT_SERVICE_URL}/reports/${req.params['id']}/asignar`,
+            req.body,
+            {
+                headers: {
+                    usuario_id: req.usuario!.user_id,
+                    rol_id: req.usuario!.rol_id,
+                },
+            }
+        );
+        res.status(response.status).json(response.data);
+    } catch (error: any) {
+        res.status(error.response?.status || 500).json(error.response?.data);
+    }
+});
+
+// Desasignar rescatista
+router.delete('/reports/:id/asignar', verificarToken, async (req: Request, res: Response) => {
+    try {
+        const response = await axios.delete(
+            `${process.env.REPORT_SERVICE_URL}/reports/${req.params['id']}/asignar`,
+            {
+                headers: {
+                    usuario_id: req.usuario!.user_id,
+                    rol_id: req.usuario!.rol_id,
+                },
+            }
+        );
+        res.status(response.status).json(response.data);
+    } catch (error: any) {
+        res.status(error.response?.status || 500).json(error.response?.data);
+    }
+});
+
 export default router;
