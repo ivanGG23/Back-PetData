@@ -17,6 +17,6 @@ router.put('/reports/:id/estado', changeReportStatus);
 router.put('/reports/:id', updateReport);
 router.post('/reports/evidencia', addEvidencia);
 router.post('/reports/:id/asignar', asignarReporte);
-router.delete('/reports/:id/desasignar', desasignarReporte);
+router.delete('/reports/:id/asignar', desasignarReporte);
 
 export default router;
