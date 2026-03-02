@@ -1,0 +1,47 @@
+import { PrismaClient } from '@prisma/client';
+import axios from 'axios';
+
+const prisma = new PrismaClient();
+
+export class GetHeatmapUseCase {
+    async execute(estado_reporte_id?: number) {
+
+        // Obtener reportes con filtro opcional de estado
+        const reportes = await prisma.rEPORTS.findMany({
+            where: {
+                ...(estado_reporte_id ? { estado_reporte_actual: estado_reporte_id } : {}),
+            },
+            select: {
+                id: true,
+                estado_reporte_actual: true,
+                prioridad_id: true,
+                locacion_id: true,
+            },
+        });
+
+        // Obtener coordenadas de cada reporte desde location-service
+        const puntos = await Promise.all(
+            reportes
+                .filter((r) => r.locacion_id !== null)
+                .map(async (reporte) => {
+                    try {
+                        const response = await axios.get(
+                            `${process.env.LOCATION_SERVICE_URL}/location/${reporte.locacion_id}`
+                        );
+                        return {
+                            reporte_id: reporte.id,
+                            latitud: parseFloat(response.data.latitud),
+                            longitud: parseFloat(response.data.longitud),
+                            prioridad_id: reporte.prioridad_id,
+                            estado_reporte_actual: reporte.estado_reporte_actual,
+                        };
+                    } catch (error) {
+                        return null;
+                    }
+                })
+        );
+
+        // Filtrar los que fallaron
+        return puntos.filter((p) => p !== null);
+    }
+}
