@@ -187,4 +187,22 @@ router.get('/tracking/evidencia/:reporte_id', verificarToken, async (req: Reques
     }
 });
 
+router.post('/reports/evidencia', verificarToken, async (req: Request, res: Response) => {
+    try {
+        const response = await axios.post(
+            `${process.env.REPORT_SERVICE_URL}/reports/evidencia`,
+            req.body,
+            {
+                headers: {
+                    usuario_id: req.usuario!.user_id,
+                    rol_id: req.usuario!.rol_id,
+                },
+            }
+        );
+        res.status(response.status).json(response.data);
+    } catch (error: any) {
+        res.status(error.response?.status || 500).json(error.response?.data);
+    }
+});
+
 export default router;
