@@ -242,4 +242,17 @@ router.delete('/reports/:id/asignar', verificarToken, async (req: Request, res: 
     }
 });
 
+// Ruta para las coordenadas de mapas
+router.get('/reports/heatmap', verificarToken, async (req: Request, res: Response) => {
+    try {
+        const response = await axios.get(
+            `${process.env.REPORT_SERVICE_URL}/reports/heatmap`,
+            { params: req.query }
+        );
+        res.status(response.status).json(response.data);
+    } catch (error: any) {
+        res.status(error.response?.status || 500).json(error.response?.data);
+    }
+});
+
 export default router;
