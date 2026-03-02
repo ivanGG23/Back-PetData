@@ -2,7 +2,7 @@
   "name": "location-service",
   "version": "1.0.0",
   "description": "Microservicio de ubicaciones GPS para PatitasSeguras",
-  "main": "main.ts",
+  "main": "dist/main.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only main.ts",
     "build": "tsc",

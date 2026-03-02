@@ -1,0 +1,154 @@
+version: '3.8'
+
+services:
+
+  # Base de datos PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: petdata_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: tu_contraseña
+      POSTGRES_DB: PetData
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - petdata_network
+
+  # Base de datos MongoDB
+  mongodb:
+    image: mongo:7
+    container_name: petdata_mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - petdata_network
+
+  # Auth Service
+  auth-service:
+    build:
+      context: ./src/services/auth-service
+      dockerfile: Dockerfile
+    container_name: auth_service
+    environment:
+      DATABASE_URL: postgresql://postgres:tu_contraseña@postgres:5432/PetData
+      JWT_SECRET: tu_jwt_secret
+      GOOGLE_CLIENT_ID: tu_google_client_id
+      GOOGLE_CLIENT_SECRET: tu_google_client_secret
+      GOOGLE_CALLBACK_URL: http://localhost:3001/auth/google/callback
+      PORT: 3001
+    ports:
+      - "3001:3001"
+    depends_on:
+      - postgres
+    networks:
+      - petdata_network
+
+  # Location Service
+  location-service:
+    build:
+      context: ./src/services/location-service
+      dockerfile: Dockerfile
+    container_name: location_service
+    environment:
+      DATABASE_URL: postgresql://postgres:tu_contraseña@postgres:5432/PetData
+      PORT: 3002
+    ports:
+      - "3002:3002"
+    depends_on:
+      - postgres
+    networks:
+      - petdata_network
+
+  # Report Service
+  report-service:
+    build:
+      context: ./src/services/report-service
+      dockerfile: Dockerfile
+    container_name: report_service
+    environment:
+      DATABASE_URL: postgresql://postgres:tu_contraseña@postgres:5432/PetData
+      LOCATION_SERVICE_URL: http://location-service:3002
+      TRACKING_SERVICE_URL: http://tracking-service:3005
+      REPUTATION_SERVICE_URL: http://reputation-service:3004
+      AUTH_SERVICE_URL: http://auth-service:3001
+      PORT: 3003
+    ports:
+      - "3003:3003"
+    depends_on:
+      - postgres
+      - location-service
+      - tracking-service
+      - reputation-service
+    networks:
+      - petdata_network
+
+  # Reputation Service
+  reputation-service:
+    build:
+      context: ./src/services/reputation-service
+      dockerfile: Dockerfile
+    container_name: reputation_service
+    environment:
+      DATABASE_URL: postgresql://postgres:tu_contraseña@postgres:5432/PetData
+      AUTH_SERVICE_URL: http://auth-service:3001
+      PORT: 3004
+    ports:
+      - "3004:3004"
+    depends_on:
+      - postgres
+      - auth-service
+    networks:
+      - petdata_network
+
+  # Tracking Service
+  tracking-service:
+    build:
+      context: ./src/services/tracking-service
+      dockerfile: Dockerfile
+    container_name: tracking_service
+    environment:
+      MONGODB_URL: mongodb://mongodb:27017/patitasseguras
+      PORT: 3005
+    ports:
+      - "3005:3005"
+    depends_on:
+      - mongodb
+    networks:
+      - petdata_network
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./src/api-gateway
+      dockerfile: Dockerfile
+    container_name: api_gateway
+    environment:
+      JWT_SECRET: tu_jwt_secret
+      AUTH_SERVICE_URL: http://auth-service:3001
+      REPORT_SERVICE_URL: http://report-service:3003
+      LOCATION_SERVICE_URL: http://location-service:3002
+      REPUTATION_SERVICE_URL: http://reputation-service:3004
+      TRACKING_SERVICE_URL: http://tracking-service:3005
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - auth-service
+      - report-service
+      - reputation-service
+      - tracking-service
+    networks:
+      - petdata_network
+
+networks:
+  petdata_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  mongodb_data:
