@@ -255,4 +255,34 @@ router.get('/reports/heatmap', verificarToken, async (req: Request, res: Respons
     }
 });
 
+// Comments
+router.post('/comments', verificarToken, async (req: Request, res: Response) => {
+    try {
+        const response = await axios.post(
+            `${process.env.COMMENT_SERVICE_URL}/comments`,
+            req.body,
+            {
+                headers: {
+                    usuario_id: req.usuario!.user_id,
+                    rol_id: req.usuario!.rol_id,
+                },
+            }
+        );
+        res.status(response.status).json(response.data);
+    } catch (error: any) {
+        res.status(error.response?.status || 500).json(error.response?.data);
+    }
+});
+
+router.get('/comments/:reporte_id', verificarToken, async (req: Request, res: Response) => {
+    try {
+        const response = await axios.get(
+            `${process.env.COMMENT_SERVICE_URL}/comments/${req.params['reporte_id']}`
+        );
+        res.status(response.status).json(response.data);
+    } catch (error: any) {
+        res.status(error.response?.status || 500).json(error.response?.data);
+    }
+});
+
 export default router;
