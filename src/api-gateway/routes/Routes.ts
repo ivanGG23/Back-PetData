@@ -297,4 +297,15 @@ router.get('/auth/users/:id', verificarToken, async (req: Request, res: Response
     }
 });
 
+router.get('/reports/users/:usuario_id/stats', verificarToken, async (req, res) => {
+    try {
+        const response = await axios.get(
+            `${process.env.REPORT_SERVICE_URL}/reports/users/${req.params['usuario_id']}/stats`
+        );
+        res.status(response.status).json(response.data);
+    } catch (error: any) {
+        res.status(error.response?.status || 500).json(error.response?.data);
+    }
+});
+
 export default router;
