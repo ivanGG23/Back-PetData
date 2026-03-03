@@ -6,11 +6,13 @@ import { register } from '../controllers/RegisterController';
 import { updateUser } from '../controllers/UpdateUserController';
 import { deleteUser } from '../controllers/DeleteUserController';
 import { suspendUser } from '../controllers/SuspendUserController';
+import { getUserById } from '../controllers/GetUserByIdController';
 
 const router = express.Router();
 
 router.post('/auth/register', register);
 router.post('/auth/login', login);
+router.get('/auth/users/:id', getUserById);
 router.put('/auth/user/:id', updateUser);
 router.delete('/auth/user/:id', deleteUser);
 router.put('/auth/user/:id/suspender', suspendUser);

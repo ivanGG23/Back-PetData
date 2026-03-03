@@ -285,4 +285,16 @@ router.get('/comments/:reporte_id', verificarToken, async (req: Request, res: Re
     }
 });
 
+// Agrega esta ruta junto a las demás de /auth
+router.get('/auth/users/:id', verificarToken, async (req: Request, res: Response) => {
+    try {
+        const response = await axios.get(
+            `${process.env.AUTH_SERVICE_URL}/auth/users/${req.params['id']}`
+        );
+        res.status(response.status).json(response.data);
+    } catch (error: any) {
+        res.status(error.response?.status || 500).json(error.response?.data);
+    }
+});
+
 export default router;
