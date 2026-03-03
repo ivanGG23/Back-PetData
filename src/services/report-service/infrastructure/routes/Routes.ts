@@ -8,6 +8,7 @@ import { addEvidencia } from '../controllers/AddEvidenciaController';
 import { asignarReporte } from '../controllers/AsignarReporteController';
 import { desasignarReporte } from '../controllers/DesasignarReporteController';
 import { getHeatmap } from '../controllers/GetHeatmapController';
+import { getUserStats } from '../controllers/GetUserStatsController';
 
 const router = express.Router();
 
@@ -20,5 +21,6 @@ router.post('/reports/evidencia', addEvidencia);
 router.post('/reports/:id/asignar', asignarReporte);
 router.delete('/reports/:id/asignar', desasignarReporte);
 router.get('/reports/heatmap', getHeatmap);
+router.get('/reports/users/:usuario_id/stats', getUserStats);
 
 export default router;
