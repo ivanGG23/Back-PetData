@@ -67,7 +67,7 @@ export class CreateReportUseCase {
             );
             await prisma.rEPORTS.update({
                 where: { id: reporte.id },
-                data:  { locacion_id: locationResponse.data.id },
+                data:  { locacion_id: locationResponse.data.data.id },
             });
         } catch {
             await prisma.rEPORTS.delete({ where: { id: reporte.id } });
