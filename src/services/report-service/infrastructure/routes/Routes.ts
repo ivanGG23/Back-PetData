@@ -4,6 +4,7 @@ import { getReports } from '../controllers/GetReportsController';
 import { getReportById } from '../controllers/GetReportByIdController';
 import { changeReportStatus } from '../controllers/ChangeReportStatusController';
 import { updateReport } from '../controllers/UpdateReportController';
+//import { addEvidencia } from '../controllers/AddEvidenciaController';
 import { addEvidencia } from '../controllers/AddEvidenciaController';
 import { asignarReporte } from '../controllers/AsignarReporteController';
 import { desasignarReporte } from '../controllers/DesasignarReporteController';
@@ -13,16 +14,18 @@ import { upload } from '../middlewares/upload';
 
 const router = express.Router();
 
-router.post('/reports', createReport);
+// Rutas estáticas primero, antes de las rutas con parámetros (:id)
+router.post('/reports', upload.array('imagenes', 3), createReport);
 router.get('/reports', getReports);
+router.post('/reports/evidencia', upload.array('imagenes', 3), addEvidencia);
+router.get('/reports/heatmap', getHeatmap);
+router.get('/reports/users/:usuario_id/stats', getUserStats);
+
+// Rutas con parámetros al final
 router.get('/reports/:id', getReportById);
 router.put('/reports/:id/estado', changeReportStatus);
 router.put('/reports/:id', updateReport);
-router.post('/reports/evidencia', addEvidencia);
 router.post('/reports/:id/asignar', asignarReporte);
 router.delete('/reports/:id/asignar', desasignarReporte);
-router.get('/reports/heatmap', getHeatmap);
-router.get('/reports/users/:usuario_id/stats', getUserStats);
-router.post('/reports/evidencia', upload.array('imagenes', 3), addEvidencia);
 
 export default router;

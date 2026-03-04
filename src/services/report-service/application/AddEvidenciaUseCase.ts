@@ -34,10 +34,12 @@ export class AddEvidenciaUseCase {
             throw new Error('Se requiere al menos una imagen');
         }
 
+        // Subir todas las imágenes a Cloudinary en paralelo
         const urls = await Promise.all(
             archivos.map(archivo => subirImagen(archivo.buffer, `reporte_${reporte_id}`))
         );
 
+        // Registrar evidencias en tracking-service
         try {
             await Promise.all(
                 urls.map(url_img =>

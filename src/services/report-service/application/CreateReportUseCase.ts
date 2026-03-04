@@ -1,11 +1,12 @@
 import { PrismaClient } from '@prisma/client';
 import axios from 'axios';
 import { CreateReportRequest } from '../domain/dto/CreateReportRequest';
+import { subirImagen } from '../infrastructure/utils/cloudinary';
 
 const prisma = new PrismaClient();
 
 export class CreateReportUseCase {
-    async execute(data: CreateReportRequest) {
+    async execute(data: CreateReportRequest, archivos: Express.Multer.File[]) {
 
         // Validar límite de 3 reportes por día
         const hoy = new Date();
@@ -21,76 +22,69 @@ export class CreateReportUseCase {
         if (reportesHoy >= 3) {
             throw new Error('Has alcanzado el límite de 3 reportes por día');
         }
-        
-        // Validar que venga al menos una imagen
-        if (!data.url_imgs || data.url_imgs.length === 0) {
+
+        if (!archivos || archivos.length === 0) {
             throw new Error('Se requiere al menos una imagen para crear el reporte');
         }
 
-        // Validar que existan estado_animal y prioridad
-        const estadoAnimal = await prisma.eSTADO_ANIMAL.findUnique({
-            where: { id: data.estado_animal_id },
-        });
+        // Validar estado_animal y prioridad
+        const estadoAnimal = await prisma.eSTADO_ANIMAL.findUnique({ where: { id: data.estado_animal_id } });
+        if (!estadoAnimal) throw new Error('Estado del animal no válido');
 
-        if (!estadoAnimal) {
-            throw new Error('Estado del animal no válido');
-        }
+        const prioridad = await prisma.pRIORIDAD.findUnique({ where: { id: data.prioridad_id } });
+        if (!prioridad) throw new Error('Prioridad no válida');
 
-        const prioridad = await prisma.pRIORIDAD.findUnique({
-            where: { id: data.prioridad_id },
-        });
+        // Subir imágenes a Cloudinary antes de crear el reporte
+        const urls = await Promise.all(
+            archivos.map(archivo => subirImagen(archivo.buffer, `reporte_nuevo`))
+        );
 
-        if (!prioridad) {
-            throw new Error('Prioridad no válida');
-        }
-
-        // Crear el reporte con estado "Pendiente" (id: 1)
+        // Crear el reporte
         const reporte = await prisma.rEPORTS.create({
             data: {
                 usuario_creador_id: data.usuario_creador_id,
-                estado_animal_id: data.estado_animal_id,
+                estado_animal_id:   data.estado_animal_id,
                 estado_reporte_actual: 1,
-                prioridad_id: data.prioridad_id,
-                descripcion: data.descripcion,
-                contacto_opcional: data.contacto_opcional ?? null,
+                prioridad_id:       data.prioridad_id,
+                descripcion:        data.descripcion,
+                contacto_opcional:  data.contacto_opcional ?? null,
             },
         });
 
-        // Llamar al location-service para guardar las coordenadas
+        // Renombrar en Cloudinary a la carpeta correcta del reporte
+        // (opcional, las URLs ya están guardadas)
+
+        // Guardar ubicación
         try {
             const locationResponse = await axios.post(
                 `${process.env.LOCATION_SERVICE_URL}/location`,
                 {
-                    reporte_id: reporte.id,
-                    latitud: data.latitud,
-                    longitud: data.longitud,
+                    reporte_id:       reporte.id,
+                    latitud:          data.latitud,
+                    longitud:         data.longitud,
                     precision_metros: data.precision_metros ?? null,
                 }
             );
-
-            // Actualizar el reporte con el locacion_id que devuelve el location-service
             await prisma.rEPORTS.update({
                 where: { id: reporte.id },
-                data: { locacion_id: locationResponse.data.id },
+                data:  { locacion_id: locationResponse.data.id },
             });
-
-        } catch (error) {
-            // Si el location-service falla, eliminamos el reporte para mantener consistencia
+        } catch {
             await prisma.rEPORTS.delete({ where: { id: reporte.id } });
             throw new Error('Error al guardar la ubicación, intenta de nuevo');
         }
 
-        // Registrar evidencias iniciales automáticamente
+        // Registrar evidencias iniciales
         try {
             await Promise.all(
-                data.url_imgs.map((url_img) =>
+                urls.map(url_img =>
                     axios.post(
                         `${process.env.TRACKING_SERVICE_URL}/tracking/evidencia`,
                         {
-                            reporte_id: reporte.id,
-                            subido_por: data.usuario_creador_id,
+                            reporte_id:  reporte.id,
+                            subido_por:  data.usuario_creador_id,
                             url_img,
-                            tipo: 'inicial',
+                            tipo:        'inicial',
                         }
                     )
                 )
@@ -100,7 +94,7 @@ export class CreateReportUseCase {
         }
 
         return {
-            message: 'Reporte creado correctamente',
+            message:   'Reporte creado correctamente',
             reporte_id: reporte.id,
         };
     }

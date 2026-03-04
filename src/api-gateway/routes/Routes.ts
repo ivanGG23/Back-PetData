@@ -35,14 +35,43 @@ router.get('/auth/google', async (req: Request, res: Response) => {
     res.redirect(`${process.env.AUTH_SERVICE_URL}/auth/google`);
 });
 
-// ─── REPORTS (con token) ──────────────────────────────────
-router.post('/reports', verificarToken, async (req: Request, res: Response) => {
+router.post('/reports', verificarToken, uploadGateway.array('imagenes', 3), async (req: Request, res: Response) => {
     try {
+        const FormData = require('form-data');
+        const form = new FormData();
+
+        const archivos = req.files as Express.Multer.File[];
+
+        if (!archivos || archivos.length === 0) {
+            res.status(400).json({ error: 'Se requiere al menos una imagen' });
+            return;
+        }
+
+        // Reenviar archivos
+        archivos.forEach(archivo => {
+            form.append('imagenes', archivo.buffer, {
+                filename: archivo.originalname,
+                contentType: archivo.mimetype,
+            });
+        });
+
+        // Reenviar campos de texto
+        form.append('usuario_creador_id', req.usuario!.user_id.toString());
+        form.append('estado_animal_id', req.body.estado_animal_id);
+        form.append('prioridad_id', req.body.prioridad_id);
+        form.append('descripcion', req.body.descripcion);
+        form.append('latitud', req.body.latitud);
+        form.append('longitud', req.body.longitud);
+        if (req.body.precision_metros) form.append('precision_metros', req.body.precision_metros);
+        if (req.body.contacto_opcional) form.append('contacto_opcional', req.body.contacto_opcional);
+
         const response = await axios.post(
             `${process.env.REPORT_SERVICE_URL}/reports`,
+            form,
             {
-                ...req.body,
-                usuario_creador_id: req.usuario!.user_id, // Inyectamos el user_id del token
+                headers: {
+                    ...form.getHeaders(),
+                },
             }
         );
         res.status(response.status).json(response.data);
@@ -194,8 +223,14 @@ router.post('/reports/evidencia', verificarToken, uploadGateway.array('imagenes'
         const FormData = require('form-data');
         const form = new FormData();
 
-        // Reenviar archivos
         const archivos = req.files as Express.Multer.File[];
+
+        if (!archivos || archivos.length === 0) {
+            res.status(400).json({ error: 'No se enviaron imágenes' });
+            return;
+        }
+
+        // Reenviar archivos
         archivos.forEach(archivo => {
             form.append('imagenes', archivo.buffer, {
                 filename: archivo.originalname,
@@ -203,9 +238,16 @@ router.post('/reports/evidencia', verificarToken, uploadGateway.array('imagenes'
             });
         });
 
-        // Reenviar campos de texto
-        form.append('reporte_id', req.body.reporte_id);
-        if (req.body.tipo) form.append('tipo', req.body.tipo);
+        // Reenviar reporte_id desde el body ya parseado por multer
+        const reporte_id = req.body?.reporte_id;
+        
+        if (!reporte_id) {
+            res.status(400).json({ error: 'reporte_id es requerido' });
+            return;
+        }
+
+        form.append('reporte_id', reporte_id);
+        if (req.body?.tipo) form.append('tipo', req.body.tipo);
 
         const response = await axios.post(
             `${process.env.REPORT_SERVICE_URL}/reports/evidencia`,
