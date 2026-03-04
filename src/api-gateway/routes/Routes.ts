@@ -1,8 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { verificarToken } from '../middlewares/jwt_middleware';
 import axios from 'axios';
+import multer from 'multer';
 
 const router = Router();
+const uploadGateway = multer({ storage: multer.memoryStorage() });
 
 // ─── AUTH (sin token) ─────────────────────────────────────
 router.post('/auth/register', async (req: Request, res: Response) => {
@@ -187,13 +189,30 @@ router.get('/tracking/evidencia/:reporte_id', verificarToken, async (req: Reques
     }
 });
 
-router.post('/reports/evidencia', verificarToken, async (req: Request, res: Response) => {
+router.post('/reports/evidencia', verificarToken, uploadGateway.array('imagenes', 3), async (req: Request, res: Response) => {
     try {
+        const FormData = require('form-data');
+        const form = new FormData();
+
+        // Reenviar archivos
+        const archivos = req.files as Express.Multer.File[];
+        archivos.forEach(archivo => {
+            form.append('imagenes', archivo.buffer, {
+                filename: archivo.originalname,
+                contentType: archivo.mimetype,
+            });
+        });
+
+        // Reenviar campos de texto
+        form.append('reporte_id', req.body.reporte_id);
+        if (req.body.tipo) form.append('tipo', req.body.tipo);
+
         const response = await axios.post(
             `${process.env.REPORT_SERVICE_URL}/reports/evidencia`,
-            req.body,
+            form,
             {
                 headers: {
+                    ...form.getHeaders(),
                     usuario_id: req.usuario!.user_id,
                     rol_id: req.usuario!.rol_id,
                 },
