@@ -11,6 +11,8 @@ export class GetUserByIdUseCase {
                 nombre: true,
                 apellido: true,
                 avatar_url: true,
+                correo: true,
+                rol_id:true
             },
         });
 
