@@ -7,6 +7,8 @@ export class GoogleLoginUseCase {
                 user_id: user.user_id,
                 rol_id: user.rol_id,
                 correo: user.correo,
+                nombre: user.nombre,
+                apellido: user.apellido,
             },
             process.env.JWT_SECRET!,
             { expiresIn: '7d' }
