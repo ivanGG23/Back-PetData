@@ -3,10 +3,10 @@ import { CreateLocationRequest } from "../domain/dto/CreateLocationRequest";
 import { Location } from "../domain/entities/Location";
 
 export class SaveLocationUseCase {
-  constructor(private readonly repository: ILocationRepository) {}
+  constructor(private readonly repository: ILocationRepository) { }
 
   async execute(data: CreateLocationRequest): Promise<Location> {
-    if (!data.reporte_id || !data.latitud || !data.longitud) {
+    if (!data.reporte_id || data.latitud === undefined || data.longitud === undefined) {
       throw new Error("Campos requeridos: reporte_id, latitud, longitud");
     }
 
