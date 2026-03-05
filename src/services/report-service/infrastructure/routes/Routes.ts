@@ -10,6 +10,7 @@ import { desasignarReporte } from '../controllers/DesasignarReporteController';
 import { getHeatmap } from '../controllers/GetHeatmapController';
 import { getUserStats } from '../controllers/GetUserStatsController';
 import { upload } from '../middlewares/upload';
+import { getGlobalStats } from '../controllers/GetGlobalStatsController';
 
 const router = express.Router();
 
@@ -19,6 +20,7 @@ router.get('/reports', getReports);
 router.post('/reports/evidencia', upload.array('imagenes', 3), addEvidencia);
 router.get('/reports/heatmap', getHeatmap);
 router.get('/reports/users/:usuario_id/stats', getUserStats);
+router.get('/reports/stats/global', getGlobalStats);
 
 // Rutas con parámetros al final
 router.get('/reports/:id', getReportById);
