@@ -370,4 +370,15 @@ router.get('/reports/users/:usuario_id/stats', verificarToken, async (req, res) 
     }
 });
 
+router.get('/reports/stats/global', verificarToken, async (req: Request, res: Response) => {
+    try {
+        const response = await axios.get(
+            `${process.env.REPORT_SERVICE_URL}/reports/stats/global`
+        );
+        res.status(response.status).json(response.data);
+    } catch (error: any) {
+        res.status(error.response?.status || 500).json(error.response?.data);
+    }
+});
+
 export default router;
