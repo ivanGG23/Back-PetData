@@ -39,35 +39,36 @@ export class CreateReportUseCase {
             archivos.map(archivo => subirImagen(archivo.buffer, `reporte_nuevo`))
         );
 
+        const tipoAnimal = await prisma.tIPO_ANIMAL.findUnique({ where: { id: data.tipo_animal_id } });
+        if (!tipoAnimal) throw new Error('Tipo de animal no válido');
+
         // Crear el reporte
         const reporte = await prisma.rEPORTS.create({
             data: {
                 usuario_creador_id: data.usuario_creador_id,
-                estado_animal_id:   data.estado_animal_id,
+                estado_animal_id: data.estado_animal_id,
+                tipo_animal_id: data.tipo_animal_id,
                 estado_reporte_actual: 1,
-                prioridad_id:       data.prioridad_id,
-                descripcion:        data.descripcion,
-                contacto_opcional:  data.contacto_opcional ?? null,
+                prioridad_id: data.prioridad_id,
+                descripcion: data.descripcion,
+                contacto_opcional: data.contacto_opcional ?? null,
             },
         });
-
-        // Renombrar en Cloudinary a la carpeta correcta del reporte
-        // (opcional, las URLs ya están guardadas)
 
         // Guardar ubicación
         try {
             const locationResponse = await axios.post(
                 `${process.env.LOCATION_SERVICE_URL}/location`,
                 {
-                    reporte_id:       reporte.id,
-                    latitud:          data.latitud,
-                    longitud:         data.longitud,
+                    reporte_id: reporte.id,
+                    latitud: data.latitud,
+                    longitud: data.longitud,
                     precision_metros: data.precision_metros ?? null,
                 }
             );
             await prisma.rEPORTS.update({
                 where: { id: reporte.id },
-                data:  { locacion_id: locationResponse.data.data.id },
+                data: { locacion_id: locationResponse.data.data.id },
             });
         } catch {
             await prisma.rEPORTS.delete({ where: { id: reporte.id } });
@@ -81,10 +82,10 @@ export class CreateReportUseCase {
                     axios.post(
                         `${process.env.TRACKING_SERVICE_URL}/tracking/evidencia`,
                         {
-                            reporte_id:  reporte.id,
-                            subido_por:  data.usuario_creador_id,
+                            reporte_id: reporte.id,
+                            subido_por: data.usuario_creador_id,
                             url_img,
-                            tipo:        'inicial',
+                            tipo: 'inicial',
                         }
                     )
                 )
@@ -94,7 +95,7 @@ export class CreateReportUseCase {
         }
 
         return {
-            message:   'Reporte creado correctamente',
+            message: 'Reporte creado correctamente',
             reporte_id: reporte.id,
         };
     }

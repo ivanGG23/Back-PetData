@@ -25,6 +25,7 @@ export class GetReportsUseCase {
         if (filtros.prioridad_id) where.prioridad_id = Number(filtros.prioridad_id);
         if (filtros.rescatista_id) where.rescatista_id = Number(filtros.rescatista_id);
         if (filtros.usuario_creador_id) where.usuario_creador_id = Number(filtros.usuario_creador_id);
+        if (filtros.tipo_animal_id) where.tipo_animal_id = Number(filtros.tipo_animal_id);
 
         if (filtros.fecha_inicio || filtros.fecha_fin) {
             where.fecha_creacion = {};
@@ -38,16 +39,17 @@ export class GetReportsUseCase {
                 estado_animal: true,
                 estado_reporte: true,
                 prioridad: true,
+                tipo_animal: true,
             },
             orderBy: { fecha_creacion: 'desc' },
         });
 
         // Obtener imagen inicial de cada reporte en paralelo
         const imagenes = await Promise.all(
-            reportes.map(r => getImagenInicial(r.id))
+            reportes.map((r: typeof reportes[0]) => getImagenInicial(r.id))
         );
 
-        return reportes.map((r, i) => ({
+        return reportes.map((r: typeof reportes[0], i: number) => ({
             ...r,
             imagen_url: imagenes[i],
         }));

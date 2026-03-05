@@ -58,6 +58,7 @@ router.post('/reports', verificarToken, uploadGateway.array('imagenes', 3), asyn
         // Reenviar campos de texto
         form.append('usuario_creador_id', req.usuario!.user_id.toString());
         form.append('estado_animal_id', req.body.estado_animal_id);
+        form.append('tipo_animal_id', req.body.tipo_animal_id);
         form.append('prioridad_id', req.body.prioridad_id);
         form.append('descripcion', req.body.descripcion);
         form.append('latitud', req.body.latitud);
