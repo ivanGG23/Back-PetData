@@ -1,154 +1,201 @@
-version: '3.8'
+version: "3.9"
 
 services:
 
-  # Base de datos PostgreSQL
+  # ─────────────────────────────────────────
+  # BASES DE DATOS
+  # ─────────────────────────────────────────
+
   postgres:
-    image: postgres:15-alpine
-    container_name: petdata_postgres
+    image: postgres:16-alpine
+    container_name: petdata-postgres
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: tu_contraseña
-      POSTGRES_DB: PetData
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - petdata_network
+      - petdata-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # Base de datos MongoDB
   mongodb:
-    image: mongo:7
-    container_name: petdata_mongodb
+    image: mongo:7-jammy
+    container_name: petdata-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_DB}
     ports:
       - "27017:27017"
     volumes:
-      - mongodb_data:/data/db
+      - mongo_data:/data/db
     networks:
-      - petdata_network
+      - petdata-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # Auth Service
-  auth-service:
-    build:
-      context: ./src/services/auth-service
-      dockerfile: Dockerfile
-    container_name: auth_service
-    environment:
-      DATABASE_URL: postgresql://postgres:tu_contraseña@postgres:5432/PetData
-      JWT_SECRET: tu_jwt_secret
-      GOOGLE_CLIENT_ID: tu_google_client_id
-      GOOGLE_CLIENT_SECRET: tu_google_client_secret
-      GOOGLE_CALLBACK_URL: http://localhost:3001/auth/google/callback
-      PORT: 3001
-    ports:
-      - "3001:3001"
-    depends_on:
-      - postgres
-    networks:
-      - petdata_network
+  # ─────────────────────────────────────────
+  # API GATEWAY — Puerto 3000
+  # ─────────────────────────────────────────
 
-  # Location Service
-  location-service:
-    build:
-      context: ./src/services/location-service
-      dockerfile: Dockerfile
-    container_name: location_service
-    environment:
-      DATABASE_URL: postgresql://postgres:tu_contraseña@postgres:5432/PetData
-      PORT: 3002
-    ports:
-      - "3002:3002"
-    depends_on:
-      - postgres
-    networks:
-      - petdata_network
-
-  # Report Service
-  report-service:
-    build:
-      context: ./src/services/report-service
-      dockerfile: Dockerfile
-    container_name: report_service
-    environment:
-      DATABASE_URL: postgresql://postgres:tu_contraseña@postgres:5432/PetData
-      LOCATION_SERVICE_URL: http://location-service:3002
-      TRACKING_SERVICE_URL: http://tracking-service:3005
-      REPUTATION_SERVICE_URL: http://reputation-service:3004
-      AUTH_SERVICE_URL: http://auth-service:3001
-      PORT: 3003
-    ports:
-      - "3003:3003"
-    depends_on:
-      - postgres
-      - location-service
-      - tracking-service
-      - reputation-service
-    networks:
-      - petdata_network
-
-  # Reputation Service
-  reputation-service:
-    build:
-      context: ./src/services/reputation-service
-      dockerfile: Dockerfile
-    container_name: reputation_service
-    environment:
-      DATABASE_URL: postgresql://postgres:tu_contraseña@postgres:5432/PetData
-      AUTH_SERVICE_URL: http://auth-service:3001
-      PORT: 3004
-    ports:
-      - "3004:3004"
-    depends_on:
-      - postgres
-      - auth-service
-    networks:
-      - petdata_network
-
-  # Tracking Service
-  tracking-service:
-    build:
-      context: ./src/services/tracking-service
-      dockerfile: Dockerfile
-    container_name: tracking_service
-    environment:
-      MONGODB_URL: mongodb://mongodb:27017/patitasseguras
-      PORT: 3005
-    ports:
-      - "3005:3005"
-    depends_on:
-      - mongodb
-    networks:
-      - petdata_network
-
-  # API Gateway
   api-gateway:
     build:
       context: ./src/api-gateway
       dockerfile: Dockerfile
-    container_name: api_gateway
-    environment:
-      JWT_SECRET: tu_jwt_secret
-      AUTH_SERVICE_URL: http://auth-service:3001
-      REPORT_SERVICE_URL: http://report-service:3003
-      LOCATION_SERVICE_URL: http://location-service:3002
-      REPUTATION_SERVICE_URL: http://reputation-service:3004
-      TRACKING_SERVICE_URL: http://tracking-service:3005
-      PORT: 3000
+    container_name: petdata-api-gateway
+    restart: unless-stopped
     ports:
       - "3000:3000"
+    environment:
+      PORT: 3000
+      AUTH_SERVICE_URL: http://auth-service:3001
+      LOCATION_SERVICE_URL: http://location-service:3002
+      REPORT_SERVICE_URL: http://report-service:3003
+      REPUTATION_SERVICE_URL: http://reputation-service:3004
+      TRACKING_SERVICE_URL: http://tracking-service:3005
+      COMMENT_SERVICE_URL: http://comment-service:3006
+      JWT_SECRET: ${JWT_SECRET}
     depends_on:
       - auth-service
+      - location-service
       - report-service
       - reputation-service
       - tracking-service
+      - comment-service
     networks:
-      - petdata_network
+      - petdata-network
 
-networks:
-  petdata_network:
-    driver: bridge
+  # ─────────────────────────────────────────
+  # MICROSERVICIOS
+  # ─────────────────────────────────────────
+
+  auth-service:
+    build:
+      context: ./src/services/auth-service
+      dockerfile: Dockerfile
+    container_name: petdata-auth-service
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - petdata-network
+
+  location-service:
+    build:
+      context: ./src/services/location-service
+      dockerfile: Dockerfile
+    container_name: petdata-location-service
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    environment:
+      PORT: 3002
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - petdata-network
+
+  report-service:
+    build:
+      context: ./src/services/report-service
+      dockerfile: Dockerfile
+    container_name: petdata-report-service
+    restart: unless-stopped
+    ports:
+      - "3003:3003"
+    environment:
+      PORT: 3003
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      LOCATION_SERVICE_URL: http://location-service:3002
+      TRACKING_SERVICE_URL: http://tracking-service:3005
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - petdata-network
+
+  reputation-service:
+    build:
+      context: ./src/services/reputation-service
+      dockerfile: Dockerfile
+    container_name: petdata-reputation-service
+    restart: unless-stopped
+    ports:
+      - "3004:3004"
+    environment:
+      PORT: 3004
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      AUTH_SERVICE_URL: http://auth-service:3001
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - petdata-network
+
+  tracking-service:
+    build:
+      context: ./src/services/tracking-service
+      dockerfile: Dockerfile
+    container_name: petdata-tracking-service
+    restart: unless-stopped
+    ports:
+      - "3005:3005"
+    environment:
+      PORT: 3005
+      MONGO_URL: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongodb:27017/${MONGO_DB}?authSource=admin
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - petdata-network
+
+  comment-service:
+    build:
+      context: ./src/services/comment-service
+      dockerfile: Dockerfile
+    container_name: petdata-comment-service
+    restart: unless-stopped
+    ports:
+      - "3006:3006"
+    environment:
+      PORT: 3006
+      MONGO_URL: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongodb:27017/${MONGO_DB}?authSource=admin
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - petdata-network
+
+# ─────────────────────────────────────────
+# VOLÚMENES Y RED
+# ─────────────────────────────────────────
 
 volumes:
   postgres_data:
-  mongodb_data:
+  mongo_data:
+
+networks:
+  petdata-network:
+    driver: bridge
