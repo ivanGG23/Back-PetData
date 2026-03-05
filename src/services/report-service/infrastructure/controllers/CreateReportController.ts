@@ -11,6 +11,7 @@ export const createReport = async (req: Request, res: Response) => {
         const data = {
             usuario_creador_id,
             estado_animal_id: parseInt(req.body.estado_animal_id),
+            tipo_animal_id: parseInt(req.body.tipo_animal_id),
             prioridad_id: parseInt(req.body.prioridad_id),
             descripcion: req.body.descripcion,
             latitud: parseFloat(req.body.latitud),

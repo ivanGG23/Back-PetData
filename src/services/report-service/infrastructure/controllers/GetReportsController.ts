@@ -8,6 +8,7 @@ export const getReports = async (req: Request, res: Response) => {
         const filtros = {
             estado_id: req.query.estado_id as string,
             prioridad_id: req.query.prioridad_id as string,
+            tipo_animal_id: req.query.tipo_animal_id as string,
             rescatista_id: req.query.rescatista_id as string,
             usuario_creador_id: req.query.usuario_creador_id as string,
             fecha_inicio: req.query.fecha_inicio as string,

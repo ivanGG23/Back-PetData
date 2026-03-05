@@ -1,6 +1,7 @@
 export interface CreateReportRequest {
     usuario_creador_id: number;
     estado_animal_id: number;
+    tipo_animal_id:     number;
     prioridad_id: number; 
     descripcion: string; 
     contacto_opcional?: string;

@@ -4,7 +4,6 @@ import { getReports } from '../controllers/GetReportsController';
 import { getReportById } from '../controllers/GetReportByIdController';
 import { changeReportStatus } from '../controllers/ChangeReportStatusController';
 import { updateReport } from '../controllers/UpdateReportController';
-//import { addEvidencia } from '../controllers/AddEvidenciaController';
 import { addEvidencia } from '../controllers/AddEvidenciaController';
 import { asignarReporte } from '../controllers/AsignarReporteController';
 import { desasignarReporte } from '../controllers/DesasignarReporteController';
