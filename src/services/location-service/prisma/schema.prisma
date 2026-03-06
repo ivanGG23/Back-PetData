@@ -86,3 +86,18 @@ model PRIORIDAD {
 
   @@ignore
 }
+
+model Direccion {
+  id           Int      @id @default(autoincrement())
+  reporte_id   Int      @unique
+  pais         String?
+  estado       String?
+  ciudad       String?
+  municipio    String?
+  colonia      String?
+  barrio       String?
+  display_name String?
+  fecha_subido DateTime @default(now())
+
+  @@map("DIRECCION")
+}

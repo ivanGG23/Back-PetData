@@ -3,7 +3,7 @@ import { CreateLocationRequest } from "../domain/dto/CreateLocationRequest";
 import { Location } from "../domain/entities/Location";
 
 export class SaveLocationUseCase {
-  constructor(private readonly repository: ILocationRepository) { }
+  constructor(private readonly repository: ILocationRepository) {}
 
   async execute(data: CreateLocationRequest): Promise<Location> {
     if (!data.reporte_id || data.latitud === undefined || data.longitud === undefined) {
@@ -18,6 +18,13 @@ export class SaveLocationUseCase {
       throw new Error("Longitud inválida. Debe estar entre -180 y 180");
     }
 
-    return await this.repository.save(data);
+    // Guardar coordenadas
+    const location = await this.repository.save(data);
+
+    // Guardar dirección desde Nominatim (no bloquea si falla)
+    this.repository.saveDireccion(data.reporte_id, data.latitud, data.longitud)
+      .catch(err => console.error("Error guardando dirección:", err));
+
+    return location;
   }
 }
