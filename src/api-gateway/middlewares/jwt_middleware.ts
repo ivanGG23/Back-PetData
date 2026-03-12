@@ -35,6 +35,8 @@ export const verificarToken = (
             process.env.JWT_SECRET!
         ) as TokenPayload;
 
+        console.log('Payload del token:', payload);
+
         req.usuario = payload;
         next();
     } catch (error) {
