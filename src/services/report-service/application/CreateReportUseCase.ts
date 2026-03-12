@@ -70,8 +70,10 @@ export class CreateReportUseCase {
                 where: { id: reporte.id },
                 data: { locacion_id: locationResponse.data.data.id },
             });
-        } catch {
+        } catch (error) {
             await prisma.rEPORTS.delete({ where: { id: reporte.id } });
+            console.error('Error al guardar ubicación:', error?.response?.data || error?.message);
+            console.error('URL usada:', process.env.LOCATION_SERVICE_URL);
             throw new Error('Error al guardar la ubicación, intenta de nuevo');
         }
 
