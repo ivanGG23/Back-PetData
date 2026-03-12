@@ -81,6 +81,89 @@ router.post('/reports', verificarToken, uploadGateway.array('imagenes', 3), asyn
     }
 });
 
+router.post('/reports/evidencia', verificarToken, uploadGateway.array('imagenes', 3), async (req: Request, res: Response) => {
+    try {
+        const FormData = require('form-data');
+        const form = new FormData();
+
+        const archivos = req.files as Express.Multer.File[];
+
+        if (!archivos || archivos.length === 0) {
+            res.status(400).json({ error: 'No se enviaron imágenes' });
+            return;
+        }
+
+        // Reenviar archivos
+        archivos.forEach(archivo => {
+            form.append('imagenes', archivo.buffer, {
+                filename: archivo.originalname,
+                contentType: archivo.mimetype,
+            });
+        });
+
+        // Reenviar reporte_id desde el body ya parseado por multer
+        const reporte_id = req.body?.reporte_id;
+        
+        if (!reporte_id) {
+            res.status(400).json({ error: 'reporte_id es requerido' });
+            return;
+        }
+
+        form.append('reporte_id', reporte_id);
+        if (req.body?.tipo) form.append('tipo', req.body.tipo);
+
+        const response = await axios.post(
+            `${process.env.REPORT_SERVICE_URL}/reports/evidencia`,
+            form,
+            {
+                headers: {
+                    ...form.getHeaders(),
+                    usuario_id: req.usuario!.user_id,
+                    rol_id: req.usuario!.rol_id,
+                },
+            }
+        );
+        res.status(response.status).json(response.data);
+    } catch (error: any) {
+        res.status(error.response?.status || 500).json(error.response?.data);
+    }
+});
+
+// Ruta para las coordenadas de mapas
+router.get('/reports/heatmap', verificarToken, async (req: Request, res: Response) => {
+    try {
+        const response = await axios.get(
+            `${process.env.REPORT_SERVICE_URL}/reports/heatmap`,
+            { params: req.query }
+        );
+        res.status(response.status).json(response.data);
+    } catch (error: any) {
+        res.status(error.response?.status || 500).json(error.response?.data);
+    }
+});
+
+router.get('/reports/stats/global', verificarToken, async (req: Request, res: Response) => {
+    try {
+        const response = await axios.get(
+            `${process.env.REPORT_SERVICE_URL}/reports/stats/global`
+        );
+        res.status(response.status).json(response.data);
+    } catch (error: any) {
+        res.status(error.response?.status || 500).json(error.response?.data);
+    }
+});
+
+router.get('/reports/users/:usuario_id/stats', verificarToken, async (req, res) => {
+    try {
+        const response = await axios.get(
+            `${process.env.REPORT_SERVICE_URL}/reports/users/${req.params['usuario_id']}/stats`
+        );
+        res.status(response.status).json(response.data);
+    } catch (error: any) {
+        res.status(error.response?.status || 500).json(error.response?.data);
+    }
+});
+
 // GET todos los reportes con filtros opcionales
 router.get('/reports', verificarToken, async (req: Request, res: Response) => {
     try {
@@ -219,54 +302,6 @@ router.get('/tracking/evidencia/:reporte_id', verificarToken, async (req: Reques
     }
 });
 
-router.post('/reports/evidencia', verificarToken, uploadGateway.array('imagenes', 3), async (req: Request, res: Response) => {
-    try {
-        const FormData = require('form-data');
-        const form = new FormData();
-
-        const archivos = req.files as Express.Multer.File[];
-
-        if (!archivos || archivos.length === 0) {
-            res.status(400).json({ error: 'No se enviaron imágenes' });
-            return;
-        }
-
-        // Reenviar archivos
-        archivos.forEach(archivo => {
-            form.append('imagenes', archivo.buffer, {
-                filename: archivo.originalname,
-                contentType: archivo.mimetype,
-            });
-        });
-
-        // Reenviar reporte_id desde el body ya parseado por multer
-        const reporte_id = req.body?.reporte_id;
-        
-        if (!reporte_id) {
-            res.status(400).json({ error: 'reporte_id es requerido' });
-            return;
-        }
-
-        form.append('reporte_id', reporte_id);
-        if (req.body?.tipo) form.append('tipo', req.body.tipo);
-
-        const response = await axios.post(
-            `${process.env.REPORT_SERVICE_URL}/reports/evidencia`,
-            form,
-            {
-                headers: {
-                    ...form.getHeaders(),
-                    usuario_id: req.usuario!.user_id,
-                    rol_id: req.usuario!.rol_id,
-                },
-            }
-        );
-        res.status(response.status).json(response.data);
-    } catch (error: any) {
-        res.status(error.response?.status || 500).json(error.response?.data);
-    }
-});
-
 // Asignar rescatista
 router.post('/reports/:id/asignar', verificarToken, async (req: Request, res: Response) => {
     try {
@@ -297,19 +332,6 @@ router.delete('/reports/:id/asignar', verificarToken, async (req: Request, res: 
                     rol_id: req.usuario!.rol_id,
                 },
             }
-        );
-        res.status(response.status).json(response.data);
-    } catch (error: any) {
-        res.status(error.response?.status || 500).json(error.response?.data);
-    }
-});
-
-// Ruta para las coordenadas de mapas
-router.get('/reports/heatmap', verificarToken, async (req: Request, res: Response) => {
-    try {
-        const response = await axios.get(
-            `${process.env.REPORT_SERVICE_URL}/reports/heatmap`,
-            { params: req.query }
         );
         res.status(response.status).json(response.data);
     } catch (error: any) {
@@ -359,26 +381,6 @@ router.get('/auth/users/:id', verificarToken, async (req: Request, res: Response
     }
 });
 
-router.get('/reports/users/:usuario_id/stats', verificarToken, async (req, res) => {
-    try {
-        const response = await axios.get(
-            `${process.env.REPORT_SERVICE_URL}/reports/users/${req.params['usuario_id']}/stats`
-        );
-        res.status(response.status).json(response.data);
-    } catch (error: any) {
-        res.status(error.response?.status || 500).json(error.response?.data);
-    }
-});
 
-router.get('/reports/stats/global', verificarToken, async (req: Request, res: Response) => {
-    try {
-        const response = await axios.get(
-            `${process.env.REPORT_SERVICE_URL}/reports/stats/global`
-        );
-        res.status(response.status).json(response.data);
-    } catch (error: any) {
-        res.status(error.response?.status || 500).json(error.response?.data);
-    }
-});
 
 export default router;
