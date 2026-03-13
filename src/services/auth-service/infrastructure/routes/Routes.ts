@@ -7,15 +7,17 @@ import { updateUser } from '../controllers/UpdateUserController';
 import { deleteUser } from '../controllers/DeleteUserController';
 import { suspendUser } from '../controllers/SuspendUserController';
 import { getUserById } from '../controllers/GetUserByIdController';
+import { solicitarRescatista } from '../controllers/SolicitarRescatistaController';
 
 const router = express.Router();
 
 router.post('/auth/register', register);
 router.post('/auth/login', login);
 router.get('/auth/users/:id', getUserById);
-router.put('/auth/user/:id', updateUser);
-router.delete('/auth/user/:id', deleteUser);
-router.put('/auth/user/:id/suspender', suspendUser);
+router.put('/auth/users/:id', updateUser);
+router.delete('/auth/users/:id', deleteUser);
+router.put('/auth/users/:id/suspender', suspendUser);
+router.post('/auth/users/:id/solicitar-rescatista', solicitarRescatista);
 
 // Ruta que inicia el flujo de Google
 router.get(
