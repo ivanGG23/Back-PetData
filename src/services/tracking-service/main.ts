@@ -6,6 +6,11 @@ import router from './infrastructure/routes/Routes';
 const app = express();
 
 app.use(express.json());
+
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'ok', service: 'tracking-service' });
+});
+
 app.use(router);
 
 const PORT = process.env.PORT || 3005;
