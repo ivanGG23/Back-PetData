@@ -278,7 +278,6 @@ router.get('/tracking/historial/:reporte_id', verificarToken, async (req: Reques
     }
 });
 
-// Evidencia
 router.post('/tracking/evidencia', verificarToken, async (req: Request, res: Response) => {
     try {
         const response = await axios.post(
@@ -302,7 +301,6 @@ router.get('/tracking/evidencia/:reporte_id', verificarToken, async (req: Reques
     }
 });
 
-// Asignar rescatista
 router.post('/reports/:id/asignar', verificarToken, async (req: Request, res: Response) => {
     try {
         const response = await axios.post(
@@ -321,7 +319,6 @@ router.post('/reports/:id/asignar', verificarToken, async (req: Request, res: Re
     }
 });
 
-// Desasignar rescatista
 router.delete('/reports/:id/asignar', verificarToken, async (req: Request, res: Response) => {
     try {
         const response = await axios.delete(
@@ -339,7 +336,6 @@ router.delete('/reports/:id/asignar', verificarToken, async (req: Request, res: 
     }
 });
 
-// Comments
 router.post('/comments', verificarToken, async (req: Request, res: Response) => {
     try {
         const response = await axios.post(
@@ -369,7 +365,6 @@ router.get('/comments/:reporte_id', verificarToken, async (req: Request, res: Re
     }
 });
 
-// Agrega esta ruta junto a las demás de /auth
 router.get('/auth/users/:id', verificarToken, async (req: Request, res: Response) => {
     try {
         const response = await axios.get(
@@ -381,6 +376,17 @@ router.get('/auth/users/:id', verificarToken, async (req: Request, res: Response
     }
 });
 
+router.post('/auth/users/:id/dejar-rescatista', verificarToken, async (req: Request, res: Response) => {
+    try {
+        const response = await axios.post(
+            `${process.env.AUTH_SERVICE_URL}/auth/users/${req.params['id']}/dejar-rescatista`,
+            req.body
+        );
+        res.status(response.status).json(response.data);
+    } catch (error: any) {
+        res.status(error.response?.status || 500).json(error.response?.data);
+    }
+});
 
 
 export default router;
