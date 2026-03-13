@@ -5,6 +5,11 @@ import router from './infrastructure/routes/Routes';
 const app = express();
 
 app.use(express.json());
+
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'ok', service: 'report-service' });
+});
+
 app.use(router);
 
 const PORT = process.env.PORT || 3003;
