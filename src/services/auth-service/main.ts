@@ -7,6 +7,11 @@ const app = express();
 
 app.use(express.json());
 app.use(passport.initialize());
+
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'ok', service: 'auth-service' });
+});
+
 app.use(router);
 
 const PORT = process.env.PORT || 3001;
