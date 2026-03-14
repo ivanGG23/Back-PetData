@@ -9,6 +9,10 @@ import { suspendUser } from '../controllers/SuspendUserController';
 import { getUserById } from '../controllers/GetUserByIdController';
 import { solicitarRescatista } from '../controllers/SolicitarRescatistaController';
 import { dejarRescatista } from '../controllers/DejarRescatistaController';
+import { getSolicitudes } from '../controllers/AdminGetSolicitudesController';
+import { aprobarSolicitud } from '../controllers/AdminAprobarSolicitudController';
+import { rechazarSolicitud } from '../controllers/AdminRechazarSolicitudController';
+import { getUsuarios } from '../controllers/AdminGetUsuariosController';
 
 const router = express.Router();
 
@@ -20,6 +24,10 @@ router.delete('/auth/users/:id', deleteUser);
 router.put('/auth/users/:id/suspender', suspendUser);
 router.post('/auth/users/:id/solicitar-rescatista', solicitarRescatista);
 router.post('/auth/users/:id/dejar-rescatista', dejarRescatista);
+router.get('/admin/solicitudes', getSolicitudes);
+router.put('/admin/solicitudes/:id/aprobar', aprobarSolicitud);
+router.put('/admin/solicitudes/:id/rechazar', rechazarSolicitud);
+router.get('/admin/usuarios', getUsuarios);
 
 // Ruta que inicia el flujo de Google
 router.get(
