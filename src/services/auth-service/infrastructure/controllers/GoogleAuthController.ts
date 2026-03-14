@@ -10,5 +10,5 @@ export const googleCallback = (req: Request, res: Response) => {
 
     // Aqui se envia el token al front
     // Cuando se defina el front, cambiar la URL (patitasseguras://auth?token=${token}) por el del front
-    res.redirect(`PetData://auth?token=${token}`);
+    res.redirect(`petdata://auth?token=${token}`);
 };
