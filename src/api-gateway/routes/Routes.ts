@@ -376,10 +376,10 @@ router.get('/auth/users/:id', verificarToken, async (req: Request, res: Response
     }
 });
 
-router.post('/auth/users/:id/dejar-rescatista', verificarToken, async (req: Request, res: Response) => {
+router.put('/auth/users/:id', verificarToken, async (req: Request, res: Response) => {
     try {
-        const response = await axios.post(
-            `${process.env.AUTH_SERVICE_URL}/auth/users/${req.params['id']}/dejar-rescatista`,
+        const response = await axios.put(
+            `${process.env.AUTH_SERVICE_URL}/auth/users/${req.params['id']}`,
             req.body
         );
         res.status(response.status).json(response.data);
@@ -388,5 +388,16 @@ router.post('/auth/users/:id/dejar-rescatista', verificarToken, async (req: Requ
     }
 });
 
+router.post('/auth/users/:id/solicitar-rescatista', verificarToken, async (req: Request, res: Response) => {
+    try {
+        const response = await axios.post(
+            `${process.env.AUTH_SERVICE_URL}/auth/users/${req.params['id']}/solicitar-rescatista`,
+            req.body
+        );
+        res.status(response.status).json(response.data);
+    } catch (error: any) {
+        res.status(error.response?.status || 500).json(error.response?.data);
+    }
+});
 
 export default router;
