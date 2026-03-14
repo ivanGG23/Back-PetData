@@ -31,6 +31,7 @@ model USER {
   correo_verificado        Boolean   @default(false)
   fecha_creacion           DateTime  @default(now())
   fecha_ultima_restriccion DateTime?
+  solicitud_rescatista     String?
 
   rol ROL @relation(fields: [rol_id], references: [id])
 }
