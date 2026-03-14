@@ -412,4 +412,40 @@ router.post('/auth/users/:id/solicitar-rescatista', verificarToken, async (req: 
     }
 });
 
+router.get('/admin/solicitudes', async (req: Request, res: Response) => {
+    try {
+        const response = await axios.get(`${process.env.AUTH_SERVICE_URL}/admin/solicitudes`);
+        res.status(response.status).json(response.data);
+    } catch (error: any) {
+        res.status(error.response?.status || 500).json(error.response?.data);
+    }
+});
+
+router.put('/admin/solicitudes/:id/aprobar', async (req: Request, res: Response) => {
+    try {
+        const response = await axios.put(`${process.env.AUTH_SERVICE_URL}/admin/solicitudes/${req.params['id']}/aprobar`);
+        res.status(response.status).json(response.data);
+    } catch (error: any) {
+        res.status(error.response?.status || 500).json(error.response?.data);
+    }
+});
+
+router.put('/admin/solicitudes/:id/rechazar', async (req: Request, res: Response) => {
+    try {
+        const response = await axios.put(`${process.env.AUTH_SERVICE_URL}/admin/solicitudes/${req.params['id']}/rechazar`);
+        res.status(response.status).json(response.data);
+    } catch (error: any) {
+        res.status(error.response?.status || 500).json(error.response?.data);
+    }
+});
+
+router.get('/admin/usuarios', async (req: Request, res: Response) => {
+    try {
+        const response = await axios.get(`${process.env.AUTH_SERVICE_URL}/admin/usuarios`);
+        res.status(response.status).json(response.data);
+    } catch (error: any) {
+        res.status(error.response?.status || 500).json(error.response?.data);
+    }
+});
+
 export default router;
