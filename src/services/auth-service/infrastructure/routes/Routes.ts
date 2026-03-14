@@ -8,6 +8,7 @@ import { deleteUser } from '../controllers/DeleteUserController';
 import { suspendUser } from '../controllers/SuspendUserController';
 import { getUserById } from '../controllers/GetUserByIdController';
 import { solicitarRescatista } from '../controllers/SolicitarRescatistaController';
+import { dejarRescatista } from '../controllers/DejarRescatistaController';
 
 const router = express.Router();
 
@@ -18,6 +19,7 @@ router.put('/auth/users/:id', updateUser);
 router.delete('/auth/users/:id', deleteUser);
 router.put('/auth/users/:id/suspender', suspendUser);
 router.post('/auth/users/:id/solicitar-rescatista', solicitarRescatista);
+router.post('/auth/users/:id/dejar-rescatista', dejarRescatista);
 
 // Ruta que inicia el flujo de Google
 router.get(
