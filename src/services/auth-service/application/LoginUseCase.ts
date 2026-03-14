@@ -41,7 +41,7 @@ export class LoginUseCase {
                 correo: user.correo,
             },
             process.env.JWT_SECRET!,
-            { expiresIn: '10m' }
+            { expiresIn: '5d' }
         );
 
         return {
