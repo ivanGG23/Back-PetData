@@ -23,7 +23,7 @@ export class GetHeatmapUseCase {
             reportes.map(async (reporte) => {
                 try {
                     const response = await axios.get(
-                        `${process.env.LOCATION_SERVICE_URL}/location/${reporte.locacion_id}`
+                        `${process.env.LOCATION_SERVICE_URL}/location/${reporte.id}`
                     );
                     // La respuesta tiene un nivel extra: response.data.data
                     const loc = response.data.data ?? response.data;
