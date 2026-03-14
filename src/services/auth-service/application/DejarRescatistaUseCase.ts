@@ -12,7 +12,10 @@ export class DejarRescatistaUseCase {
 
         await prisma.uSER.update({
             where: { user_id },
-            data: { rol_id: 1 }
+            data: {
+                rol_id: 1,
+                solicitud_rescatista: null 
+            }
         });
 
         return { message: 'Has dejado de ser rescatista.' };
