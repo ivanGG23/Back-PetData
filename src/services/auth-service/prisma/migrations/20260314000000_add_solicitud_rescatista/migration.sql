@@ -1,0 +1,1 @@
+ALTER TABLE "USER" ADD COLUMN "solicitud_rescatista" TEXT;
