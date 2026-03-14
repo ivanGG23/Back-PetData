@@ -11,7 +11,7 @@ export class GoogleLoginUseCase {
                 apellido: user.apellido,
             },
             process.env.JWT_SECRET!,
-            { expiresIn: '7d' }
+            { expiresIn: '10m' }
         );
         return token;
     }
