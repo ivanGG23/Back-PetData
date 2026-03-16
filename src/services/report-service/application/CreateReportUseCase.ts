@@ -57,7 +57,7 @@ export class CreateReportUseCase {
 
         // Guardar ubicación
         try {
-            const locationResponse = await axios.post(
+            await axios.post(
                 `${process.env.LOCATION_SERVICE_URL}/location`,
                 {
                     reporte_id: reporte.id,
@@ -66,10 +66,7 @@ export class CreateReportUseCase {
                     precision_metros: data.precision_metros ?? null,
                 }
             );
-            await prisma.rEPORTS.update({
-                where: { id: reporte.id },
-                data: { locacion_id: locationResponse.data.data.id },
-            });
+            // ← se eliminó el prisma.rEPORTS.update con locacion_id
         } catch (error) {
             await prisma.rEPORTS.delete({ where: { id: reporte.id } });
             console.error('Error al guardar ubicación:', error?.response?.data || error?.message);
