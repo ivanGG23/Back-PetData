@@ -103,7 +103,7 @@ export class ChangeReportStatusUseCase {
             );
 
             // Si vienen imágenes de cierre las registramos todas
-            if (url_imgs && url_imgs.length > 0 && estado_reporte_id === ESTADO_RESUELTO) {
+            /*if (url_imgs && url_imgs.length > 0 && estado_reporte_id === ESTADO_RESUELTO) {
                 await Promise.all(
                     url_imgs.map((url_img) =>
                         axios.post(
@@ -117,7 +117,7 @@ export class ChangeReportStatusUseCase {
                         )
                     )
                 );
-            }
+            }*/
         } catch (error) {
             console.error('Error al registrar historial o evidencia:', error);
         }
