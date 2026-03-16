@@ -23,6 +23,8 @@ export class GetReportByIdUseCase {
                 estado_animal: true,
                 estado_reporte: true,
                 prioridad: true,
+                locacion: true,  
+                direccion: true,
             },
         });
 

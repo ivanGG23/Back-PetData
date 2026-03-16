@@ -40,6 +40,8 @@ export class GetReportsUseCase {
                 estado_reporte: true,
                 prioridad: true,
                 tipo_animal: true,
+                locacion: true,
+                direccion: true,
             },
             orderBy: { fecha_creacion: 'desc' },
         });
