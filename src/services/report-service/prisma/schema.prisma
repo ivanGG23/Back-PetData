@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
@@ -30,24 +30,27 @@ model PRIORIDAD {
 }
 
 model REPORTS {
-  id                    Int            @id @default(autoincrement())
+  id                    Int       @id @default(autoincrement())
   usuario_creador_id    Int
   rescatista_id         Int?
   estado_animal_id      Int
   estado_reporte_actual Int
   prioridad_id          Int
   tipo_animal_id        Int
-  locacion_id           Int?
   descripcion           String
-  fecha_creacion        DateTime       @default(now())
+  fecha_creacion        DateTime  @default(now())
   fecha_asig            DateTime?
   fecha_cierre          DateTime?
   contacto_opcional     String?
 
-  estado_animal  ESTADO_ANIMAL  @relation(fields: [estado_animal_id], references: [id])
+  estado_animal  ESTADO_ANIMAL  @relation(fields: [estado_animal_id],  references: [id])
   estado_reporte ESTADO_REPORTE @relation(fields: [estado_reporte_actual], references: [id])
-  prioridad      PRIORIDAD      @relation(fields: [prioridad_id], references: [id])
-  tipo_animal    TIPO_ANIMAL    @relation(fields: [tipo_animal_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_tipo_animal")
+  prioridad      PRIORIDAD      @relation(fields: [prioridad_id],       references: [id])
+  tipo_animal    TIPO_ANIMAL    @relation(fields: [tipo_animal_id],     references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_tipo_animal")
+
+  // ── Relaciones nuevas ──────────────────────────────────────────────────────
+  locacion  LOCACION?
+  direccion DIRECCION?
 }
 
 model TIPO_ANIMAL {
@@ -55,4 +58,30 @@ model TIPO_ANIMAL {
   nombre      String
   descripcion String
   reportes    REPORTS[]
+}
+
+model LOCACION {
+  id               Int       @id @default(autoincrement())
+  reporte_id       Int       @unique
+  latitud          Decimal   @db.Decimal(10, 7)
+  longitud         Decimal   @db.Decimal(10, 7)
+  precision_metros Decimal?  @db.Decimal(6, 2)
+  fecha_subido     DateTime  @default(now())
+
+  reporte REPORTS @relation(fields: [reporte_id], references: [id])
+}
+
+model DIRECCION {
+  id           Int       @id @default(autoincrement())
+  reporte_id   Int       @unique
+  pais         String?
+  estado       String?
+  ciudad       String?
+  municipio    String?
+  colonia      String?
+  barrio       String?
+  display_name String?
+  fecha_subido DateTime  @default(now())
+
+  reporte REPORTS @relation(fields: [reporte_id], references: [id])
 }
