@@ -21,48 +21,65 @@ export class GetGlobalStatsUseCase {
             total: e._count.tipo_animal_id,
         }));
 
-        // ── Historial (intervalos de 5 días, últimos 30 días) ─────
-        const ahora = new Date();
-        const hace30 = new Date(ahora);
-        hace30.setDate(ahora.getDate() - 30);
+        // ── Contadores globales ───────────────────────────────────
+        const [activos, rescatados, pendientes] = await Promise.all([
+            prisma.rEPORTS.count({ where: { estado_reporte_actual: 3 } }),
+            prisma.rEPORTS.count({ where: { estado_reporte_actual: 4 } }),
+            prisma.rEPORTS.count({ where: { estado_reporte_actual: 1 } }),
+        ]);
 
-        const reportes30 = await prisma.rEPORTS.findMany({
-            where: { fecha_creacion: { gte: hace30 } },
+        // ── Historial ─────────────────────────────────────────────
+        const primerReporte = await prisma.rEPORTS.findFirst({
+            orderBy: { fecha_creacion: 'asc' },
+            select: { fecha_creacion: true },
+        });
+
+        // Si no hay reportes, historial vacío
+        if (!primerReporte) {
+            return { especies, historial: [], zonas: [], activos, rescatados, pendientes };
+        }
+
+        const ahora = new Date();
+        const fechaInicio = primerReporte.fecha_creacion;
+
+        const diasTotales = Math.ceil(
+            (ahora.getTime() - fechaInicio.getTime()) / (1000 * 60 * 60 * 24)
+        );
+
+        const numIntervalos = Math.max(1, Math.ceil(diasTotales / 5));
+
+        const reportesTodos = await prisma.rEPORTS.findMany({
+            where: { fecha_creacion: { gte: fechaInicio } },
             select: { fecha_creacion: true, estado_reporte_actual: true, fecha_cierre: true },
         });
 
-        const intervalos = Array.from({ length: 6 }, (_, i) => {
-            const inicio = new Date(hace30);
-            inicio.setDate(hace30.getDate() + i * 5);
+        const formatFecha = (d: Date) => `${d.getDate()}/${d.getMonth() + 1}`;
+
+        const intervalos = Array.from({ length: numIntervalos }, (_, i) => {
+            const inicio = new Date(fechaInicio);
+            inicio.setDate(fechaInicio.getDate() + i * 5);
             const fin = new Date(inicio);
             fin.setDate(inicio.getDate() + 5);
-
-            // ← reemplaza el label genérico por fechas reales
-            const formatFecha = (d: Date) =>
-                `${d.getDate()}/${d.getMonth() + 1}`;
-            const label = `${formatFecha(inicio)}-${formatFecha(fin)}`;
-
-            return { label, inicio, fin };
+            const finReal = fin > ahora ? ahora : fin;
+            return {
+                label: `${formatFecha(inicio)}-${formatFecha(finReal)}`,
+                inicio,
+                fin: finReal,
+            };
         });
 
         const historial = intervalos.map(({ label, inicio, fin }) => {
-            const nuevos = reportes30.filter(
+            const nuevos = reportesTodos.filter(
                 r => r.fecha_creacion >= inicio && r.fecha_creacion < fin
             ).length;
-            const resueltos = reportes30.filter(
+            const resueltos = reportesTodos.filter(
                 r => r.estado_reporte_actual === 4 &&
                     r.fecha_cierre &&
                     r.fecha_cierre >= inicio &&
                     r.fecha_cierre < fin
             ).length;
             return { periodo: label, nuevos, resueltos };
-        });
-
-        const [activos, rescatados, pendientes] = await Promise.all([
-            prisma.rEPORTS.count({ where: { estado_reporte_actual: 3 } }), // En proceso
-            prisma.rEPORTS.count({ where: { estado_reporte_actual: 4 } }), // Resuelto
-            prisma.rEPORTS.count({ where: { estado_reporte_actual: 1 } }), // Pendiente
-        ]);
+        }).filter(p => p.nuevos > 0 || p.resueltos > 0);
 
         // ── Zonas (via location-service) ──────────────────────────
         let zonas: any[] = [];
@@ -71,7 +88,6 @@ export class GetGlobalStatsUseCase {
                 `${LOCATION_SERVICE_URL}/location/direcciones`
             );
 
-            // Agrupar por barrio (o colonia si barrio es null)
             const mapaZonas: Record<string, { total: number; resueltos: number }> = {};
 
             for (const dir of direcciones as { reporte_id: number; barrio: string | null; colonia: string | null }[]) {
@@ -80,14 +96,6 @@ export class GetGlobalStatsUseCase {
                 mapaZonas[zona].total++;
             }
 
-            // Obtener cuáles están resueltos
-            const idsResueltos = new Set(
-                reportes30
-                    .filter(r => r.estado_reporte_actual === 4)
-                    .map((_, i) => i) // placeholder, abajo lo hacemos bien
-            );
-
-            // Buscar resueltos reales
             const resueltosTodos = await prisma.rEPORTS.findMany({
                 where: { estado_reporte_actual: 4 },
                 select: { id: true },
@@ -104,7 +112,7 @@ export class GetGlobalStatsUseCase {
             zonas = Object.entries(mapaZonas)
                 .map(([zona, datos]) => ({ zona, ...datos }))
                 .sort((a, b) => b.total - a.total)
-                .slice(0, 10); // top 10 zonas
+                .slice(0, 10);
 
         } catch (error) {
             console.error('Error consultando location-service:', error);
