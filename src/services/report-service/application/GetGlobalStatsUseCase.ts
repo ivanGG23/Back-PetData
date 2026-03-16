@@ -36,7 +36,13 @@ export class GetGlobalStatsUseCase {
             inicio.setDate(hace30.getDate() + i * 5);
             const fin = new Date(inicio);
             fin.setDate(inicio.getDate() + 5);
-            return { label: `Día ${i * 5 + 1}-${i * 5 + 5}`, inicio, fin };
+
+            // ← reemplaza el label genérico por fechas reales
+            const formatFecha = (d: Date) =>
+                `${d.getDate()}/${d.getMonth() + 1}`;
+            const label = `${formatFecha(inicio)}-${formatFecha(fin)}`;
+
+            return { label, inicio, fin };
         });
 
         const historial = intervalos.map(({ label, inicio, fin }) => {
