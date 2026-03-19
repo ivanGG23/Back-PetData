@@ -7,8 +7,8 @@ export class GetAllDireccionesUseCase {
         return await prisma.direccion.findMany({
             select: {
                 reporte_id: true,
-                barrio: true,
-                colonia: true,
+                ciudad: true,
+                municipio: true,
             },
         });
     }
