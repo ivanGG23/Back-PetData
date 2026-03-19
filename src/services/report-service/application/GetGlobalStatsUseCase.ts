@@ -90,8 +90,8 @@ export class GetGlobalStatsUseCase {
 
             const mapaZonas: Record<string, { total: number; resueltos: number }> = {};
 
-            for (const dir of direcciones as { reporte_id: number; barrio: string | null; colonia: string | null }[]) {
-                const zona = dir.barrio ?? dir.colonia ?? 'Sin zona';
+            for (const dir of direcciones as { reporte_id: number; ciudad: string | null; municipio: string | null }[]) {
+                const zona = dir.ciudad ?? dir.municipio ?? 'Sin zona';
                 if (!mapaZonas[zona]) mapaZonas[zona] = { total: 0, resueltos: 0 };
                 mapaZonas[zona].total++;
             }
@@ -102,8 +102,8 @@ export class GetGlobalStatsUseCase {
             });
             const idsResueltosSet = new Set(resueltosTodos.map(r => r.id));
 
-            for (const dir of direcciones as { reporte_id: number; barrio: string | null; colonia: string | null }[]) {
-                const zona = dir.barrio ?? dir.colonia ?? 'Sin zona';
+            for (const dir of direcciones as { reporte_id: number; ciudad: string | null; municipio: string | null }[]) {
+                const zona = dir.ciudad ?? dir.municipio ?? 'Sin zona';
                 if (idsResueltosSet.has(dir.reporte_id)) {
                     mapaZonas[zona].resueltos++;
                 }
