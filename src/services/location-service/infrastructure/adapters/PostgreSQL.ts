@@ -70,8 +70,8 @@ export class PostgreSQLLocationRepository implements ILocationRepository {
       pais         = address.country        ?? null;
       estado       = address.state          ?? null;
       ciudad       = address.city           ?? address.town ?? address.village ?? null;
-      municipio    = address.municipality   ?? address.city_district ?? null;
-      colonia      = address.neighbourhood  ?? address.suburb ?? null;
+      municipio    = address.county         ?? address.municipality ?? null;
+      colonia      = address.suburb         ?? address.neighbourhood ?? null;
       barrio       = address.quarter        ?? null;
       display_name = data.display_name      ?? null;
 
