@@ -6,7 +6,10 @@ import router from './routes/Routes';
 const app = express();
 
 app.use(cors({
-    origin: 'https://administrador-pet-data.vercel.app',
+    origin: [
+        'https://administrador-pet-data.vercel.app',
+        'https://administrador-petdata.vercel.app'
+    ],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
