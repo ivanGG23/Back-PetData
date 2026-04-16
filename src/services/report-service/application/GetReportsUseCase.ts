@@ -19,57 +19,39 @@ async function getImagenInicial(reporte_id: number): Promise<string | null> {
 
 export class GetReportsUseCase {
     async execute(filtros: GetReportsRequest) {
+        const where: any = {};
 
-        // Construcción dinámica del WHERE igual que antes
-        const conditions: string[] = [];
-        const values: any[] = [];
-        let idx = 1;
+        if (filtros.estado_id) where.estado_reporte_actual = Number(filtros.estado_id);
+        if (filtros.prioridad_id) where.prioridad_id = Number(filtros.prioridad_id);
+        if (filtros.rescatista_id) where.rescatista_id = Number(filtros.rescatista_id);
+        if (filtros.usuario_creador_id) where.usuario_creador_id = Number(filtros.usuario_creador_id);
+        if (filtros.tipo_animal_id) where.tipo_animal_id = Number(filtros.tipo_animal_id);
 
-        if (filtros.estado_id) {
-            conditions.push(`estado_reporte_actual = $${idx++}`);
-            values.push(Number(filtros.estado_id));
-        }
-        if (filtros.prioridad_id) {
-            conditions.push(`prioridad_id = $${idx++}`);
-            values.push(Number(filtros.prioridad_id));
-        }
-        if (filtros.rescatista_id) {
-            conditions.push(`rescatista_id = $${idx++}`);
-            values.push(Number(filtros.rescatista_id));
-        }
-        if (filtros.usuario_creador_id) {
-            conditions.push(`usuario_creador_id = $${idx++}`);
-            values.push(Number(filtros.usuario_creador_id));
-        }
-        if (filtros.tipo_animal_id) {
-            conditions.push(`tipo_animal_id = $${idx++}`);
-            values.push(Number(filtros.tipo_animal_id));
-        }
-        if (filtros.fecha_inicio) {
-            conditions.push(`fecha_creacion >= $${idx++}`);
-            values.push(new Date(filtros.fecha_inicio));
-        }
-        if (filtros.fecha_fin) {
-            conditions.push(`fecha_creacion <= $${idx++}`);
-            values.push(new Date(filtros.fecha_fin));
+        if (filtros.fecha_inicio || filtros.fecha_fin) {
+            where.fecha_creacion = {};
+            if (filtros.fecha_inicio) where.fecha_creacion.gte = new Date(filtros.fecha_inicio);
+            if (filtros.fecha_fin) where.fecha_creacion.lte = new Date(filtros.fecha_fin);
         }
 
-        const whereClause = conditions.length > 0
-            ? `WHERE ${conditions.join(' AND ')}`
-            : '';
+        const reportes = await prisma.rEPORTS.findMany({
+            where,
+            include: {
+                estado_animal: true,
+                estado_reporte: true,
+                prioridad: true,
+                tipo_animal: true,
+                locacion: true,
+                direccion: true,
+            },
+            orderBy: { fecha_creacion: 'desc' },
+        });
 
-        // Consulta a la vista en lugar de la tabla directa
-        const reportes = await prisma.$queryRawUnsafe<any[]>(
-            `SELECT * FROM v_reportes_lista ${whereClause} ORDER BY fecha_creacion DESC`,
-            ...values
-        );
-
-        // Obtener imagen inicial de cada reporte en paralelo (igual que antes)
+        // Obtener imagen inicial de cada reporte en paralelo
         const imagenes = await Promise.all(
-            reportes.map((r: any) => getImagenInicial(r.id))
+            reportes.map((r: typeof reportes[0]) => getImagenInicial(r.id))
         );
 
-        return reportes.map((r: any, i: number) => ({
+        return reportes.map((r: typeof reportes[0], i: number) => ({
             ...r,
             imagen_url: imagenes[i],
         }));
