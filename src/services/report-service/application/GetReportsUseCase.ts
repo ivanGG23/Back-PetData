@@ -58,13 +58,11 @@ export class GetReportsUseCase {
             ? `WHERE ${conditions.join(' AND ')}`
             : '';
 
-        // Consulta a la vista en lugar de la tabla directa
         const reportes = await prisma.$queryRawUnsafe<any[]>(
             `SELECT * FROM v_reportes_lista ${whereClause} ORDER BY fecha_creacion DESC`,
             ...values
         );
 
-        // Obtener imagen inicial de cada reporte en paralelo (igual que antes)
         const imagenes = await Promise.all(
             reportes.map((r: any) => getImagenInicial(r.id))
         );
